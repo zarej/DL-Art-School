@@ -22,12 +22,23 @@ pip install -r codes/requirements.laxed.txt # ONLY TESTED ON python=3.9; use you
 	 * reduce batch size if you have less-than 16GB vram
 	 * possibly change the learning rate and other hyperparams
 3. run `cd codes && python3 train.py -opt ../experiments/EXAMPLE_gpt.yml`
-4. ???? (I'm still running step 3)
+   * DO NOT CANCEL THIS until you see `INFO: Saving models and training states.`. All training progress before that line is LOST. (feel free to cancel it if you used bad data or something)
+4. load up the [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) fork, and use the new `--ar-checkpoint` option with `/path/to/DL-Art-School/experiments/<INSERT EXPERIMENT NAME HERE>/models/<MOST RECENT STEPS>_gpt.pth`.
+
+## RESULTS
+For a very basic and simple task, I trained the ar model for 500 steps, with batch size 128, on a dataset of [Kim Kitsuragi](https://discoelysium.fandom.com/wiki/Kim_Kitsuragi) that contained ~4.5k wav files. This means I trained for about 11 epoches, which I'm not sure is a good thing or not.
+
+| CONDITIONING | CHECKPOINT | SAMPLEs | verdict
+| - | - | - | - |
+| KK | original | [here](./voice_samples/kk_orig) | - |
+| KK | 500_gpt.pth | [here](./voice_samples/kk_500) | Much closer to the real character! | 
+| emma | original | [here](https://github.com/152334H/tortoise-tts-fast/tree/main/optimized_examples/A/very_fast-ar16) | - | 
+| emma | 500_gpt.pth | [here](./voice_samples/kk_500_emma) | A mix of "well-transferred accent" (surprising!) && "catastropic memorisation" (expected) | 
 
 ## todo
 - [X] run at least 1 epoch of autoregressive training with clear loss decrease
 - [X] upload training configs
-- [ ] check that results are actually good
+- [X] check that results are actually good (!!)
 - [ ] train other submodels (diffusion, clvp)
 - [ ] create a colab training notebook
 - [ ] offload all of the work to other contributors
