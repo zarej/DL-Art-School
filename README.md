@@ -1,3 +1,38 @@
+with apologies to neonbjb
+
+# Tortoise fine-tuning with DLAS
+
+## INSTALLATION
+(this will be updated often)
+
+```sh
+git clone https://github.com/152334H/DL-Art-School
+cd DL-Art-School
+wget https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth -O experiments/dvae.pth # this will definitely be taken down at some point; open an issue with a backup link and i'll replace it
+cp ~/.cache/tortoise/models/autoregressive.pth experiments # copy the gpt model
+pip install -r codes/requirements.laxed.txt # ONLY TESTED ON python=3.9; use your existing tortoise env if possible
+```
+
+## RUNNING
+1. prepare a dataset (**LJSpeech format** is what's configured; if you can read the code you can use other formats like voxpopuli)
+2. **edit `experiments/EXAMPLE_gpt.yml`**. Read & possibly edit **every line** **with `CHANGEME`** in it. Especially,
+   * change the dataset config (obviously)
+	 * reduce batch size if you have less-than 16GB vram
+	 * possibly change the learning rate and other hyperparams
+3. run `cd codes && python3 train.py -opt ../experiments/EXAMPLE_gpt.yml`
+4. ???? (I'm still running step 3)
+
+## todo
+- [X] run at least 1 epoch of autoregressive training with clear loss decrease
+- [X] upload training configs
+- [ ] check that results are actually good
+- [ ] train other submodels (diffusion, clvp)
+- [ ] create a colab training notebook
+- [ ] offload all of the work to other contributors
+
+
+---
+
 # Deep Learning Art School
 
 Send your Pytorch model to art class!
