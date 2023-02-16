@@ -35,6 +35,8 @@ For a very basic and simple task, I trained the ar model for 500 steps, with bat
 | emma | original | [here](https://github.com/152334H/tortoise-tts-fast/tree/main/optimized_examples/A/very_fast-ar16) | - | 
 | emma | 500_gpt.pth | [here](./voice_samples/kk_500_emma) | A mix of "well-transferred accent" (surprising!) && "catastropic memorisation" (expected) | 
 
+![image](https://user-images.githubusercontent.com/54623771/219252253-7ca44efe-5d49-4ae5-9d4a-5add62f5cd77.png)
+
 ## todo
 - [X] run at least 1 epoch of autoregressive training with clear loss decrease
 - [X] upload training configs
