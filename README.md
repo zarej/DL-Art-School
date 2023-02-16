@@ -20,8 +20,8 @@ pip uninstall tensorboard # this is only needed if you want to view tensorboard 
 1. prepare a dataset (**LJSpeech format** is what's configured; if you can read the code you can use other formats like voxpopuli)
 2. **edit `experiments/EXAMPLE_gpt.yml`**. Read & possibly edit **every line** **with `CHANGEME`** in it. Especially,
    * change the dataset config (obviously)
-	 * reduce batch size if you have less-than 16GB vram
-	 * possibly change the learning rate and other hyperparams
+   * reduce batch size if you have less-than 16GB vram
+   * possibly change the learning rate and other hyperparams
 3. run `cd codes && python3 train.py -opt ../experiments/EXAMPLE_gpt.yml`
    * DO NOT CANCEL THIS until you see `INFO: Saving models and training states.`. All training progress before that line is LOST. (feel free to cancel it if you used bad data or something)
 4. load up the [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) fork, and use the new `--ar-checkpoint` option with `/path/to/DL-Art-School/experiments/<INSERT EXPERIMENT NAME HERE>/models/<MOST RECENT STEPS>_gpt.pth`.
