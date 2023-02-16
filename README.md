@@ -1,4 +1,4 @@
-with apologies to neonbjb
+**NOTICE**: this repo is not endorsed by @neonbjb
 
 # Tortoise fine-tuning with DLAS
 
