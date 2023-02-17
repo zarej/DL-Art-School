@@ -14,6 +14,8 @@ Upload your dataset to a folder on your personal Google Drive.
 
 * If you have a lot of files, you might want to upload a compressed archive and write code to extract it in the notebook (but if you cannot do this, then that's okay, just wait for the upload to finish)
 
+##### If your dataset is &lt;1k files, you might want to wait for a few days until the Colab Notebook is updated to adjust hyperparameters for smaller datasets
+
 ## Using the notebook
 
 The top of the colab notebook currently looks something like this:
@@ -39,6 +41,8 @@ This should take less-than 5 minutes to run.
 * If you receive an error at this point (or at any point later on), please report the problem.
 
 ![](./static/params.png)
+
+---
 
 ### Everything after this section is likely to change in the future
 

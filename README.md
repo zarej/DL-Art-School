@@ -1,6 +1,6 @@
 **NOTICE**: this repo is not endorsed by @neonbjb
 
-**NEW**: [Colab training notes](./COLAB_USAGE.md)
+## **NEW**: [Colab training notes](./COLAB_USAGE.md)
 
 # Tortoise fine-tuning with DLAS
 
