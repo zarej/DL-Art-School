@@ -26,6 +26,30 @@ pip uninstall tensorboard # this is only needed if you want to view tensorboard 
    * DO NOT CANCEL THIS until you see `INFO: Saving models and training states.`. All training progress before that line is LOST. (feel free to cancel it if you used bad data or something)
 4. load up the [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) fork, and use the new `--ar-checkpoint` option with `/path/to/DL-Art-School/experiments/<INSERT EXPERIMENT NAME HERE>/models/<MOST RECENT STEPS>_gpt.pth`.
 
+### continuing a training session
+_This section will be removed once I write a script to automate it_
+
+If you have to continue an incomplete training session for any reason, then:
+
+1. Find the most recently saved training state file. If the last saved step was `$step`, and your training session was named `$trainingName`, then the file will be at `../experiments/$trainingName/training_state/$step.state`
+2. Edit the `.yml` config file's `path:`
+   ```yml
+   path:
+     #pretrain_model_gpt: '../experiments/autoregressive.pth' # COMMENT THIS LINE OUT
+     strict_load: true
+     #resume_state: ../experiments/$trainingName/training_state/$step.state
+   ```
+
+### Hyperparameters vs dataset size
+_This section will be removed once I write code to automagically estimate good training parameters_
+
+Note that `epoch_steps == dataset_size//batch_size`; partial batches are discarded by the trainer.
+
+The hyperparameters configured in the example yml are sane defaults for a _reasonably large dataset_ of a few thousand samples. If your dataset is much smaller (50-500), you should make the following changes:
+* batch size reduction. Specifically, ensure the batch size used is reasonably close to being a clean divisor of the provided dataset; the DLAS trainer (currently) drops partially filled batches.
+* `gen_lr_steps`. The smaller your dataset, the faster you should be decaying the learning rate. You should have no more than 10 epoches before the first decay, i.e. the first number in `gen_lr_steps` should be smaller than `epoch_steps * 10`. (personal tests indicate that loss starts going up if there's no decay by epoch 20)
+* `print_freq`, `val_freq`, `save_checkpoint_freq`: These should all be adjusted to dataset size as well. Recommendation: `val_freq == save_checkpoint_freq == print_freq*3`; `print_freq == min(epoch_steps,50)`
+
 ## RESULTS
 For a very basic and simple task, I trained the ar model for 500 steps, with batch size 128, on a dataset of [Kim Kitsuragi](https://discoelysium.fandom.com/wiki/Kim_Kitsuragi) that contained ~4.5k wav files. This means I trained for about 11 epoches, which I'm not sure is a good thing or not.
 
