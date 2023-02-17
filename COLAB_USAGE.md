@@ -14,8 +14,6 @@ Upload your dataset to a folder on your personal Google Drive.
 
 * If you have a lot of files, you might want to upload a compressed archive and write code to extract it in the notebook (but if you cannot do this, then that's okay, just wait for the upload to finish)
 
-##### If your dataset is &lt;1k files, you might want to wait for a few days until the Colab Notebook is updated to adjust hyperparameters for smaller datasets
-
 ## Using the notebook
 
 **Before starting**, check that your runtime type is a **GPU** (`Runtime -> Change runtime type`):

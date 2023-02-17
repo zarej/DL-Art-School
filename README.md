@@ -43,14 +43,14 @@ If you have to continue an incomplete training session for any reason, then:
    ```
 
 ### Hyperparameters vs dataset size
-_This section will be removed once I write code to automagically estimate good training parameters_
+_The colab training nodebook will automatically find good hyperparams based on the dataset size. This info is merely included for CLI users || public information_.
 
 Note that `epoch_steps == dataset_size//batch_size`; partial batches are discarded by the trainer.
 
 The hyperparameters configured in the example yml are sane defaults for a _reasonably large dataset_ of a few thousand samples. If your dataset is much smaller (50-500), you should make the following changes:
 * batch size reduction. Specifically, ensure the batch size used is reasonably close to being a clean divisor of the provided dataset; the DLAS trainer (currently) drops partially filled batches.
 * `gen_lr_steps`. The smaller your dataset, the faster you should be decaying the learning rate. You should have no more than 10 epoches before the first decay, i.e. the first number in `gen_lr_steps` should be smaller than `epoch_steps * 10`. (personal tests indicate that loss starts going up if there's no decay by epoch 20)
-* `print_freq`, `val_freq`, `save_checkpoint_freq`: These should all be adjusted to dataset size as well. Recommendation: `val_freq == save_checkpoint_freq == print_freq*3`; `print_freq == min(epoch_steps,50)`
+* `print_freq`, `val_freq`, `save_checkpoint_freq`: These should all be adjusted to dataset size as well. Recommendation: `val_freq == save_checkpoint_freq == print_freq*3`; `print_freq == min(epoch_steps,100)`
 
 ## RESULTS
 For a very basic and simple task, I trained the ar model for 500 steps, with batch size 128, on a dataset of [Kim Kitsuragi](https://discoelysium.fandom.com/wiki/Kim_Kitsuragi) that contained ~4.5k wav files. This means I trained for about 11 epoches, which I'm not sure is a good thing or not.
@@ -71,8 +71,8 @@ This project is in its infantcy, and is in desperate need of contributors. If yo
 - [X] run at least 1 epoch of autoregressive training with clear loss decrease
 - [X] upload training configs
 - [X] check that results are actually good (!!)
+- [X] create a colab training notebook
 - [ ] train other submodels (diffusion, clvp)
-- [ ] create a colab training notebook
 - [ ] offload all of the work to other contributors
 
 
