@@ -1,5 +1,7 @@
 **NOTICE**: this repo is not endorsed by @neonbjb
 
+**NEW**: [Colab training notes](./COLAB_USAGE.md)
+
 # Tortoise fine-tuning with DLAS
 
 like the [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) project, **the changes in this repo are also licensed as AGPL**, but if I'm being realistic I haven't actually made any new code, the only thing I can really copyright is the config files and this readme.md
