@@ -229,7 +229,7 @@ class App(ctk.CTk):
             pass
 
     def create_default_variables(self):
-        self.base_config_path = './codes/utils/BASE_gpt.yml'
+        self.base_config_path = './codes/utils/BASE_gpt.yaml'
         with open(self.base_config_path, 'r') as stream:
             self.base_config = yaml.load(stream)
         print(self.base_config['name'])
