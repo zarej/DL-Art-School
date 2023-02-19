@@ -136,9 +136,19 @@ eval:
       in: hq
       out: [gen, codebook_commitment_loss]
 
-logger: 
+logger:
   print_freq: 100
   save_checkpoint_freq: 500 # CHANGEME: especially you should increase this it's really slow
   visuals: [gen, mel]
   visual_debug_rate: 500
   is_mel_spectrogram: true
+
+upgrades:
+  # Variable: number_of_checkpoints_to_save
+  # Description: Define how many checkpoints should be saved on disk (1 checkpoint + 1 state =~ 6.8 GB)
+  # Type: integer
+  # Values:
+  # smaller than 1 - turn off this option; there is no max value. For Colab use 1 or 2.
+  # 1 == Leave last saved checkpoint + last saved state (about 6.8 GB).
+  # 2 == Leave last 2 saved checkpoints + last saved states (about 2 *~ 6.8 GB =~ 13.6 GB).
+  number_of_checkpoints_to_save: 0
