@@ -59,7 +59,7 @@ r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/main/.m
 #save to experiments
 open('experiments/autoregressive.pth', 'wb').write(r.content)
 
-run("pip uninstall tensorboard -y", "Uninstalling Tensorboard")
+#run("pip uninstall tensorboard -y", "Uninstalling Tensorboard")
 
 base_dir = os.path.dirname(os.getcwd())
 #repo = git.Repo(base_dir)
