@@ -91,7 +91,6 @@ if os.name == "nt":
             #remove zip
             os.remove('cudnn_windows.zip')
             cudnn_src = os.path.join(os.getcwd(), "resources/cudnn-windows-x86_64-8.6.0.163_cuda11-archive/bin")
-            print(cudnn_src)
     cudnn_dest = os.path.join(sysconfig.get_paths()["purelib"], "torch", "lib")
     print(f"Checking for CUDNN files in {cudnn_dest}")
     if os.path.exists(cudnn_src):
