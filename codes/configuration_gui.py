@@ -101,7 +101,7 @@ class App(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure((2, 3), weight=0)
         self.grid_rowconfigure((0, 1, 2), weight=1)
-        self.geometry(f"{670}x{620}")
+        self.geometry(f"{700}x{620}")
         #self.stableTune_icon =PhotoImage(master=self,file = "resources/DLAS_icon.png")
         #self.iconphoto(False, self.stableTune_icon)
         self.dark_mode_var = "#1e2124"
