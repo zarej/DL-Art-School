@@ -131,3 +131,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+experiments/CHANGEME_your_experiment_name/15022023_214111_EXAMPLE_gpt.yml
+*.0
+*.yml
+experiments/EXAMPLE_gpt.yml
