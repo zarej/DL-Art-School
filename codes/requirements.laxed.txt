@@ -17,8 +17,8 @@ lambda-networks
 mup
 
 #UI
-customtkinter; sys_platform == 'windows'
-
+customtkinter
+ruamel.yaml
 # For image generation stuff
 opencv-python
 kornia
