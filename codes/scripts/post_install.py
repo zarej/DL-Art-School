@@ -49,6 +49,7 @@ def check_versions():
 
 #uninstall tensorboard so it works
 #download dvae https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth
+'''
 print("Downloading DVAE...")
 r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth", allow_redirects=True)
 #save to experiments
@@ -60,7 +61,7 @@ r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/main/.m
 open('experiments/autoregressive.pth', 'wb').write(r.content)
 
 run("pip uninstall tensorboard -y", "Uninstalling Tensorboard")
-
+'''
 
 base_dir = os.path.dirname(os.getcwd())
 #repo = git.Repo(base_dir)
@@ -80,7 +81,7 @@ if os.name == "nt":
         print("Can't find CUDNN in resources, trying main folder...")
         cudnn_src = os.path.join(os.getcwd(), "cudnn_windows")
         if not os.path.exists(cudnn_src):
-            cudnn_url = "https://b1.thefileditch.ch/mwxKTEtelILoIbMbruuM.zip"
+            cudnn_url = "https://developer.download.nvidia.com/compute/redist/cudnn/v8.6.0/local_installers/11.8/cudnn-windows-x86_64-8.6.0.163_cuda11-archive.zip"
             print(f"Downloading CUDNN 8.6")
             #download with requests
             r = requests.get(cudnn_url, allow_redirects=True)
@@ -91,8 +92,8 @@ if os.name == "nt":
                 zip_ref.extractall(os.path.join(os.getcwd(),"resources/"))
             #remove zip
             os.remove('cudnn_windows.zip')
-            cudnn_src = os.path.join(os.getcwd(), "resources/cudnn_windows")
-
+            cudnn_src = os.path.join(os.getcwd(), "resources/cudnn-windows-x86_64-8.6.0.163_cuda11-archive/bin")
+            print(cudnn_src)
     cudnn_dest = os.path.join(sysconfig.get_paths()["purelib"], "torch", "lib")
     print(f"Checking for CUDNN files in {cudnn_dest}")
     if os.path.exists(cudnn_src):
