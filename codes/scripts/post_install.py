@@ -12,8 +12,6 @@ if sys.version_info < (3, 8):
 else:
     import importlib.metadata as importlib_metadata
 
-req_file = os.path.join(os.getcwd(), "requirements.txt")
-
 def run(command, desc=None, errdesc=None, custom_env=None):
     if desc is not None:
         print(desc)
@@ -32,20 +30,6 @@ stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.st
 
     return result.stdout.decode(encoding="utf8", errors="ignore")
 
-def check_versions():
-    global req_file
-    reqs = open(req_file, 'r')
-    lines = reqs.readlines()
-    reqs_dict = {}
-    for line in lines:
-        splits = line.split("==")
-        if len(splits) == 2:
-            key = splits[0]
-            if "torch" not in key:
-                if "diffusers" in key:
-                    key = "diffusers"
-                reqs_dict[key] = splits[1].replace("\n", "").strip()
-    
 
 #uninstall tensorboard so it works
 #download dvae https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth
@@ -62,17 +46,8 @@ open('experiments/autoregressive.pth', 'wb').write(r.content)
 #run("pip uninstall tensorboard -y", "Uninstalling Tensorboard")
 
 base_dir = os.path.dirname(os.getcwd())
-#repo = git.Repo(base_dir)
-#revision = repo.rev_parse("HEAD")
-#print(f"Dreambooth revision is {revision}")
-#check_versions()
 # Check for "different" B&B Files and copy only if necessary
 if os.name == "nt":
-    '''
-    python = sys.executable
-    bnb_src = os.path.join(os.getcwd(), "resources/bitsandbytes_windows")
-    bnb_dest = os.path.join(sysconfig.get_paths()["purelib"], "bitsandbytes")
-    '''
     cudnn_src = os.path.join(os.getcwd(), "resources/cudnn_windows")
     #check if chudnn is in cwd
     if not os.path.exists(cudnn_src):
@@ -105,36 +80,3 @@ if os.name == "nt":
                     status = shutil.copy2(src_file, cudnn_dest)
             if status:
                 print("Copied CUDNN 8.6 files to destination")
-    '''
-    print(f"Checking for B&B files in {bnb_dest}")
-    if not os.path.exists(bnb_dest):
-        # make destination directory
-        os.makedirs(bnb_dest, exist_ok=True)
-    printed = False
-    filecmp.clear_cache()
-    for file in os.listdir(bnb_src):
-        src_file = os.path.join(bnb_src, file)
-        if file == "main.py":
-            dest = os.path.join(bnb_dest, "cuda_setup")
-            if not os.path.exists(dest):
-                os.mkdir(dest)
-        else:
-            dest = bnb_dest
-            if not os.path.exists(dest):
-                os.mkdir(dest)
-        dest_file = os.path.join(dest, file)
-        status = shutil.copy2(src_file, dest)
-    if status:
-        print("Copied B&B files to destination")
-    
-    d_commit = 'f7bb9ca'
-    diffusers_cmd = f"git+https://github.com/huggingface/diffusers.git@{d_commit}#egg=diffusers --force-reinstall"
-    run(f'"{python}" -m pip install {diffusers_cmd}', f"Installing Diffusers {d_commit} commit", "Couldn't install diffusers")
-    #install requirements file
-    t_commit = '491a33d'
-    trasn_cmd = f"git+https://github.com/huggingface/transformers.git@{t_commit}#egg=transformers --force-reinstall"
-    run(f'"{python}" -m pip install {trasn_cmd}', f"Installing Transformers {t_commit} commit", "Couldn't install transformers")
-
-    req_file = os.path.join(os.getcwd(), "requirements.txt")
-    run(f'"{python}" -m pip install -r "{req_file}"', "Updating requirements", "Couldn't install requirements")
-    '''
