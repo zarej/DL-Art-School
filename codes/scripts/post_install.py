@@ -33,15 +33,18 @@ stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.st
 
 #uninstall tensorboard so it works
 #download dvae https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth
-print("Downloading DVAE...")
-r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth", allow_redirects=True)
-#save to experiments
-open('experiments/dvae.pth', 'wb').write(r.content)
+#check if dvae.pth exists
+if not os.path.exists("experiments/dvae.pth"):
 
-print("Downloading Autoregressive Model...")
-r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/main/.models/autoregressive.pth", allow_redirects=True)
-#save to experiments
-open('experiments/autoregressive.pth', 'wb').write(r.content)
+    print("Downloading DVAE...")
+    r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth", allow_redirects=True)
+    #save to experiments
+    open('experiments/dvae.pth', 'wb').write(r.content)
+if not os.path.exists("experiments/autoregressive.pth"):
+    print("Downloading Autoregressive Model...")
+    r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/main/.models/autoregressive.pth", allow_redirects=True)
+    #save to experiments
+    open('experiments/autoregressive.pth', 'wb').write(r.content)
 
 #run("pip uninstall tensorboard -y", "Uninstalling Tensorboard")
 
