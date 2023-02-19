@@ -17,7 +17,7 @@ lambda-networks
 mup
 
 #UI
-customtkinter
+customtkinter; sys_platform == 'windows'
 
 # For image generation stuff
 opencv-python
