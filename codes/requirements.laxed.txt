@@ -18,7 +18,7 @@ mup
 
 #UI
 customtkinter
-
+ruamel.yaml
 # For image generation stuff
 opencv-python
 kornia

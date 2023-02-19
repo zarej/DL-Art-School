@@ -1,22 +1,14 @@
 import tkinter as tk
 import os
-import sys
-import sysconfig
 import subprocess
 from tkinter import *
 from tkinter import ttk
 import tkinter.filedialog as fd
-import json
 from tkinter import messagebox
-from PIL import Image, ImageTk,ImageOps,ImageDraw
-import glob
 #import converters
 import shutil
 from datetime import datetime
-import pyperclip
-import random
 import customtkinter as ctk
-import random
 import subprocess
 from pathlib import Path
 import ast
@@ -28,7 +20,12 @@ yaml.boolean_representation = ['false', 'true']
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 #work in progress code, not finished, credits will be added at a later date.
+def run(command, desc=None, errdesc=None, custom_env=None):
+        if desc is not None:
+            print(desc)
 
+        result = subprocess.run(command, shell=True, env=os.environ if custom_env is None else custom_env)
+        return result
 class CreateToolTip(object):
     """
     create a tooltip for a given widget
@@ -93,7 +90,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         try:
-            latest_git_hash = subprocess.check_output(["git", "ls-remote", "https://github.com/152334H/DL-Art-School.git","main"], cwd=Path(__file__).resolve().parent).strip().decode()[0:7]
+            latest_git_hash = subprocess.check_output(["git", "ls-remote", "https://github.com/152334H/DL-Art-School.git","master"], cwd=Path(__file__).resolve().parent).strip().decode()[0:7]
             #check if configs folder exists
             print("Latest git hash: " + latest_git_hash)
         except:
@@ -105,7 +102,7 @@ class App(ctk.CTk):
         self.grid_columnconfigure((2, 3), weight=0)
         self.grid_rowconfigure((0, 1, 2), weight=1)
         self.geometry(f"{670}x{620}")
-        #self.stableTune_icon =PhotoImage(master=self,file = "resources/stableTuner_icon.png")
+        #self.stableTune_icon =PhotoImage(master=self,file = "resources/DLAS_icon.png")
         #self.iconphoto(False, self.stableTune_icon)
         self.dark_mode_var = "#1e2124"
         self.dark_purple_mode_var = "#1B0F1B"
@@ -118,64 +115,52 @@ class App(ctk.CTk):
         #resizable window
         self.resizable(True, True)
         self.create_default_variables()
-        #check if stableTuner.cfg exists
-        if not os.path.exists("configs/DLAS_hash.cfg"):
-            #create stableTuner.cfg and write the latest git hash
-            with open("configs/DLAS_hash.cfg", "w") as f:
+        #check if DLAS.cfg exists
+        if not os.path.exists("DLAS_hash.cfg"):
+            #create DLAS.cfg and write the latest git hash
+            with open("DLAS_hash.cfg", "w") as f:
                 f.write(latest_git_hash)
         else:
-            #read stableTuner.cfg
-            with open("configs/DLAS_hash.cfg", "r") as f:
+            #read DLAS.cfg
+            with open("DLAS_hash.cfg", "r") as f:
                 old_git_hash = f.read()
             try:
-                #check if the latest git hash is the same as the one in stableTuner.cfg
+                #check if the latest git hash is the same as the one in DLAS.cfg
                 if latest_git_hash != old_git_hash:
-                    #if not the same, delete the old stableTuner.cfg and create a new one with the latest git hash
+                    #if not the same, delete the old DLAS.cfg and create a new one with the latest git hash
                     self.update_available = True
             except:
                 self.update_available = False
         self.sidebar_frame = ctk.CTkFrame(self, width=100, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, rowspan=10, sticky="nsew")
-        #self.logo_img = ctk.CTkImage(Image.open("resources/stableTuner_logo.png").resize((300, 300), Image.Resampling.LANCZOS),size=(80,80))
-        #self.logo_img = ctk.CTkLabel(self.sidebar_frame, image=self.logo_img, text='', height=50,width=50, font=ctk.CTkFont(size=15, weight="bold"))
-        #self.logo_img.grid(row=0, column=0, padx=20, pady=20)
         self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="DLAS", font=ctk.CTkFont(size=20, weight="bold"))
-        self.logo_label.grid(row=0, column=0, padx=0, pady=10)
-        self.empty_label = ctk.CTkLabel(self.sidebar_frame, text="", font=ctk.CTkFont(size=20, weight="bold"))
-        self.empty_label.grid(row=1, column=0, padx=0, pady=0)
+        self.logo_label.grid(row=0, column=0, padx=0, pady=20)
+
+        self.sidebar_button_0 = ctk.CTkButton(self.sidebar_frame,text='Load Config',command=self.load_config)
+        self.sidebar_button_0.configure(fg_color='transparent')
+        self.sidebar_button_0.grid(row=1, column=0, padx=20, pady=5)
         self.sidebar_button_1 = ctk.CTkButton(self.sidebar_frame,text='Common Settings',command=self.general_nav_button_event)
         self.sidebar_button_1.grid(row=2, column=0, padx=20, pady=5)
         self.sidebar_button_2 = ctk.CTkButton(self.sidebar_frame,text='Advanced Settings',command=self.training_nav_button_event)
         self.sidebar_button_2.grid(row=3, column=0, padx=20, pady=5)
-        #empty label
-        self.empty_label = ctk.CTkLabel(self.sidebar_frame, text="", font=ctk.CTkFont(size=20, weight="bold"))
-        self.empty_label.grid(row=9, column=0, padx=0, pady=0)
-        #empty label
+        self.sidebar_button_3 = ctk.CTkButton(self.sidebar_frame,text='Auto Settings',command=self.calculate_training_parameters)
+        self.sidebar_button_3.configure(fg_color='transparent')
+        self.sidebar_button_3.grid(row=4, column=0, padx=20, pady=5)
+
         
         if self.update_available:
             self.sidebar_button_11 = ctk.CTkButton(self.sidebar_frame,text='Update Available',fg_color='red',hover_color='darkred',command=self.update_DLAS)
-            self.sidebar_button_11.grid(row=12, column=0, padx=20, pady=5)
-        else:
-            self.empty_label = ctk.CTkLabel(self.sidebar_frame, text="", font=ctk.CTkFont(size=20, weight="bold"))
-            self.empty_label.grid(row=10, column=0, padx=0, pady=0)
-            #empty label
-            self.empty_label = ctk.CTkLabel(self.sidebar_frame, text="", font=ctk.CTkFont(size=20, weight="bold"))
-            self.empty_label.grid(row=11, column=0, padx=0, pady=0)
-        #self.sidebar_button_11 = ctk.CTkButton(self.sidebar_frame,text='Caption Buddy',command=self.caption_buddy)
-        #self.sidebar_button_11.grid(row=13, column=0, padx=20, pady=5)
+            self.sidebar_button_11.grid(row=5, column=0, padx=20, pady=5)
+
         self.sidebar_button_12 = ctk.CTkButton(self.sidebar_frame,text='Start Training!', command=lambda : self.process_inputs(export=False))
-        self.sidebar_button_12.bind("<Button-3>", self.create_right_click_menu_export)
+        #self.sidebar_button_12.bind("<Button-3>", self.create_right_click_menu_export)
         self.sidebar_button_12.grid(row=14, column=0, padx=20, pady=5)
         self.general_frame = ctk.CTkFrame(self, width=140, corner_radius=0,fg_color='transparent')
         self.general_frame.grid_columnconfigure(0, weight=10)
-        #self.general_frame.grid_columnconfigure(1, weight=10)
         self.general_frame_subframe = ctk.CTkScrollableFrame(self.general_frame,width=150,height=500, corner_radius=20)
         self.general_frame_subframe.grid(row=2, column=0,sticky="nsew", padx=20, pady=20)
-        #self.general_frame_subframe_side_guide = ctk.CTkFrame(self.general_frame,width=250, corner_radius=20)
-        #self.general_frame_subframe_side_guide.grid(row=2, column=1,sticky="nsew", padx=20, pady=20)
         self.create_general_settings_widgets()   
         self.apply_general_style_to_widgets(self.general_frame_subframe)
-        #self.override_general_style_widgets()
         self.advanced_settings_frame = ctk.CTkFrame(self, width=400, corner_radius=0,fg_color='transparent')
         self.advanced_settings_frame.grid_columnconfigure(0, weight=1)
         self.advanced_settings_frame_subframe = ctk.CTkFrame(self.advanced_settings_frame,width=400, corner_radius=20)
@@ -183,45 +168,14 @@ class App(ctk.CTk):
         self.advanced_settings_frame_subframe.grid_columnconfigure(1, weight=1)
         self.advanced_settings_frame_subframe.grid(row=2, column=0,sticky="nsew", padx=20, pady=20)
         self.create_advanced_settings_widgets()
-        #self.grid_train_settings()
         self.apply_general_style_to_widgets(self.advanced_settings_frame_subframe)
         self.override_training_style_widgets()
-
-        
-
         self.select_frame_by_name('general') 
         self.update()
         
-        if os.path.exists("DLAS_last_run.json"):
+        if os.path.exists("./experiments/DLAS_last_run.yaml"):
             try:
-                self.load_config(file_name="DLAS_last_run.json")
-                #try loading the latest generated model to playground entry
-                self.find_latest_generated_model(self.play_model_entry)
-                #convert to ckpt if option is wanted
-                if self.execute_post_conversion == True:
-                    #construct unique name
-                    epoch = self.play_model_entry.get().split(os.sep)[-1]
-                    name_of_model = self.play_model_entry.get().split(os.sep)[-2]
-                    res = self.resolution_var.get()
-                    #time and date
-                    #format time and date to %month%day%hour%minute
-                    now = datetime.now()
-                    dt_string = now.strftime("%m-%d-%H-%M")
-                    #construct name
-                    name = name_of_model+'_'+res+"_e"+epoch+"_"+dt_string
-                    #print(self.play_model_entry.get())
-                    #if self.play_model_entry.get() is a directory and all required folders exist
-                    if os.path.isdir(self.play_model_entry.get()) and all([os.path.exists(os.path.join(self.play_model_entry.get(), folder)) for folder in self.required_folders]):
-                        #print("all folders exist")
-                        self.convert_to_ckpt(model_path=self.play_model_entry.get(), output_path=self.output_path_entry.get(),name=name)
-
-                    #self.convert_to_ckpt(model_path=self.play_model_entry.get(), output_path=self.output_path_entry.get(),name=name)
-                    #open DLAS_last_run.json and change convert_to_ckpt_after_training to False
-                    with open("DLAS_last_run.json", "r") as f:
-                        data = json.load(f)
-                    data["execute_post_conversion"] = False
-                    with open("DLAS_last_run.json", "w") as f:
-                        json.dump(data, f, indent=4)
+                self.load_config(file_name="./experiments/DLAS_last_run.yaml")
             except Exception as e:
                 print(e)
                 pass
@@ -267,7 +221,7 @@ class App(ctk.CTk):
         self.train_num_workers = 8
         self.valid_num_workers = 1
         self.path_to_ar_model = '../experiments/autoregressive.pth'
-        self.path_to_dvae_model = '../experiments/dvae.pth'
+        #self.path_to_dvae_model = '../experiments/dvae.pth'
 
         #configurator variables
         self.update_available = False
@@ -361,7 +315,6 @@ class App(ctk.CTk):
                 i.grid(padx=10, pady=5,sticky="")
             if 'ctklabel' in str(i):
                 i.grid(padx=10, pady=5,sticky="w")
-
     def apply_general_style_to_widgets(self,frame):
         for i in frame.children.values():
             if 'ctkbutton' in str(i):
@@ -408,8 +361,6 @@ class App(ctk.CTk):
             if curRow == rows:
                 curRow = 0
                 curColumn += 2
-    def calculate_batch_sizes(self,entry):
-        pass
     def create_general_settings_widgets(self):
 
 
@@ -418,10 +369,7 @@ class App(ctk.CTk):
         #self.tip_label = ctk.CTkLabel(self.general_frame, text="Tip: Hover over settings for information",  font=ctk.CTkFont(size=14))
         #self.tip_label.grid(row=1, column=0, sticky="nsew")
 
-        self.load_config_button = ctk.CTkButton(self.general_frame_subframe, text="Load/Save Config")
-        #bind the load config button to a function
-        self.load_config_button.bind("<Button-1>", lambda event: self.create_left_click_menu_config(event))
-        self.load_config_button.grid(row=0, column=0, sticky="nsew")
+       
         #create project name label
         self.project_name_label = ctk.CTkLabel(self.general_frame_subframe, text="Project Name")
         project_name_label_ttp = CreateToolTip(self.project_name_label, "The name of the project. This will be used to name the output folder.")
@@ -431,14 +379,14 @@ class App(ctk.CTk):
         self.project_name_entry.insert(0, self.project_name)
         #create gpu ids label
         self.gpu_ids_label = ctk.CTkLabel(self.general_frame_subframe, text="GPU IDs")
-        gpu_ids_label_ttp = CreateToolTip(self.gpu_ids_label, "The GPU IDs to use. If you have multiple GPUs, you can specify which ones to use. If you have a single GPU, you can specify which one to use. If you have no GPUs, you can specify which CPU to use. If you have multiple CPUs, you can specify which ones to use. If you have a single CPU, you can specify which one to use. If you have no CPUs, you can specify which GPU to use. If you have multiple GPUs, you can specify which ones to use. If you have a single GPU, you can specify which one to use. If you have no GPUs, you can specify which CPU to use. If you have multiple CPUs, you can specify which ones to use. If you have a single CPU, you can specify which one to use. If you have no CPUs, you can specify which GPU to use. If you have multiple GPUs, you can specify which ones to use. If you have a single GPU, you can specify which one to use. If you have no GPUs, you can specify which CPU to use. If you have multiple CPUs, you can specify which ones to use. If you have a single CPU, you can specify which one to use. If you have no CPUs, you can specify which GPU to use. If you have multiple GPUs, you can specify which ones to use. If you have a single GPU, you can specify which one to use. If you have no GPUs, you can specify which CPU to use. If you have multiple CPUs, you can specify which ones to use. If you have a single CPU, you can specify which one to use. If you have no CPUs, you can specify which GPU to use. If you have multiple GPUs, you can specify which ones to use. If you have a single GPU, you can specify which one to use. If you have no GPUs, you can specify which CPU to use. If you have multiple CPUs, you can specify which ones to use. If you have a single CPU, you can specify which one to use. If you have no CPUs, you can specify which GPU to use. If you have multiple GPUs, you can specify which ones to use. If you have a single GPU, you can specify which one to use. If you have no GPUs, you can specify which CPU to use. If you have multiple CPUs")
+        gpu_ids_label_ttp = CreateToolTip(self.gpu_ids_label, "The GPU IDs to use.")
         self.gpu_ids_label.grid(row=2, column=0, sticky="nsew")
         self.gpu_ids_entry = ctk.CTkEntry(self.general_frame_subframe)
         self.gpu_ids_entry.grid(row=2, column=1, sticky="nsew")
         self.gpu_ids_entry.insert(0, self.gpu_ids)
         #create enable checkpointing label
-        self.enable_checkpointing_label = ctk.CTkLabel(self.general_frame_subframe, text="Enable Checkpointing")
-        enable_checkpointing_label_ttp = CreateToolTip(self.enable_checkpointing_label, "Enable checkpointing. If enabled, the model will be saved after every epoch.")
+        self.enable_checkpointing_label = ctk.CTkLabel(self.general_frame_subframe, text="Enable Gradient Checkpointing")
+        enable_checkpointing_label_ttp = CreateToolTip(self.enable_checkpointing_label, "RAM saving technique. If enabled, the model will be trained using gradient checkpointing.")
         self.enable_checkpointing_label.grid(row=3, column=0, sticky="nsew")
         #create enable checkpointing checkbox
         self.enable_checkpointing_var = tk.IntVar()
@@ -483,30 +431,32 @@ class App(ctk.CTk):
         self.dataset_path_entry = ctk.CTkEntry(self.general_frame_subframe)
         self.dataset_path_entry.grid(row=8, column=1, sticky="nsew")
         self.dataset_path_entry.insert(0, self.path_to_lj_dataset)
+        self.dataset_path_entry.bind("<FocusOut>", lambda event: self.check_dataset_folder(self.dataset_path_entry))
+
         #create a button to select the dataset path next to the entry
-        self.dataset_path_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="...", command=lambda: self.open_file_dialog(self.dataset_path_entry))
+        self.dataset_path_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="...", command=lambda: self.browse_for_path_focus(self.dataset_path_entry))
         self.dataset_path_button.grid(row=8, column=2, sticky="nsew")
         
         #create train batch size label and entry
         self.train_batch_size_label = ctk.CTkLabel(self.general_frame_subframe, text="Train Batch Size")
-        train_batch_size_label_ttp = CreateToolTip(self.train_batch_size_label, "The batch size to use for training.")
+        train_batch_size_label_ttp = CreateToolTip(self.train_batch_size_label, "The batch size to use for training, must not be more than the number of training samples.")
         self.train_batch_size_label.grid(row=9, column=0, sticky="nsew")
         self.train_batch_size_entry = ctk.CTkEntry(self.general_frame_subframe)
         self.train_batch_size_entry.grid(row=9, column=1, sticky="nsew")
         self.train_batch_size_entry.insert(0, self.train_batch_size)
         #add a button to trigger calculation of the batch size
-        self.train_batch_size_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="A", command=lambda: self.calculate_batch_sizes(self.train_batch_size_entry))
-        self.train_batch_size_button.grid(row=9, column=2, sticky="nsew")
+        #self.train_batch_size_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="A", command=lambda: self.calculate_training_parameters(self.train_batch_size_entry))
+        #self.train_batch_size_button.grid(row=9, column=2, sticky="nsew")
         #create a validation batch size label and entry
         self.val_batch_size_label = ctk.CTkLabel(self.general_frame_subframe, text="Validation Batch Size")
-        val_batch_size_label_ttp = CreateToolTip(self.val_batch_size_label, "The batch size to use for validation.")
+        val_batch_size_label_ttp = CreateToolTip(self.val_batch_size_label, "The batch size to use for validation, must not be more than the number of validation samples.")
         self.val_batch_size_label.grid(row=10, column=0, sticky="nsew")
         self.val_batch_size_entry = ctk.CTkEntry(self.general_frame_subframe)
         self.val_batch_size_entry.grid(row=10, column=1, sticky="nsew")
         self.val_batch_size_entry.insert(0, self.valid_batch_size)
         #add a button to trigger calculation of the batch size
-        self.val_batch_size_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="A", command=lambda: self.calculate_batch_sizes(self.val_batch_size_entry))
-        self.val_batch_size_button.grid(row=10, column=2, sticky="nsew")
+        #self.val_batch_size_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="A", command=lambda: self.calculate_batch_sizes(self.val_batch_size_entry))
+        #self.val_batch_size_button.grid(row=10, column=2, sticky="nsew")
         #create a training bold label
         self.training_label = ctk.CTkLabel(self.general_frame_subframe, text="Training Settings",font=ctk.CTkFont(size=20, weight="bold"))
         self.training_label.grid(row=11, column=0, sticky="nsew",pady=10)
@@ -539,8 +489,8 @@ class App(ctk.CTk):
         self.learning_rate_entry.grid(row=15, column=1, sticky="nsew")
         self.learning_rate_entry.insert(0, self.learning_rate)
         #create learning rate steps
-        self.learning_rate_steps_label = ctk.CTkLabel(self.general_frame_subframe, text="Learning Rate Steps")
-        learning_rate_steps_label_ttp = CreateToolTip(self.learning_rate_steps_label, "The learning rate to use.")
+        self.learning_rate_steps_label = ctk.CTkLabel(self.general_frame_subframe, text="Learning Rate Stepping")
+        learning_rate_steps_label_ttp = CreateToolTip(self.learning_rate_steps_label, "The learning rate stepping behaviour.")
         self.learning_rate_steps_label.grid(row=16, column=0, sticky="nsew")
         self.learning_rate_steps_entry = ctk.CTkEntry(self.general_frame_subframe)
         self.learning_rate_steps_entry.grid(row=16, column=1, sticky="nsew")
@@ -570,63 +520,38 @@ class App(ctk.CTk):
         self.visual_debug_rate_entry.grid(row=20, column=1, sticky="nsew")
         self.visual_debug_rate_entry.insert(0, self.visual_debug_rate)
 
-        
-        '''
-        self.vae_model_path_label = ctk.CTkLabel(self.general_frame_subframe, text="VAE model path / HuggingFace Repo")
-        vae_model_path_label_ttp = CreateToolTip(self.vae_model_path_label, "OPTINAL The path to the VAE model to use. Can be a local path or a HuggingFace repo path.")
-        self.vae_model_path_label.grid(row=2, column=0, sticky="nsew")
-        self.vae_model_path_entry = ctk.CTkEntry(self.general_frame_subframe)
-        self.vae_model_path_entry.grid(row=2, column=1, sticky="nsew")
-        self.vae_model_path_entry.insert(0, self.vae_model_path)
-        #make a button to open a file dialog
-        self.vae_model_path_button = ctk.CTkButton(self.general_frame_subframe,width=30, text="...", command=lambda: self.open_file_dialog(self.vae_model_path_entry))
-        self.vae_model_path_button.grid(row=2, column=2, sticky="w")
-
-        self.output_path_label = ctk.CTkLabel(self.general_frame_subframe, text="Output Path")
-        output_path_label_ttp = CreateToolTip(self.output_path_label, "The path to the output directory. If it doesn't exist, it will be created.")
-        self.output_path_label.grid(row=3, column=0, sticky="nsew")
-        self.output_path_entry = ctk.CTkEntry(self.general_frame_subframe)
-        self.output_path_entry.grid(row=3, column=1, sticky="nsew")
-        self.output_path_entry.insert(0, self.output_path)
-        #make a button to open a file dialog
-        self.output_path_button = ctk.CTkButton(self.general_frame_subframe,width=30, text="...", command=lambda: self.open_file_dialog(self.output_path_entry))
-        self.output_path_button.grid(row=3, column=2, sticky="w")
-
-        self.convert_to_ckpt_after_training_label = ctk.CTkLabel(self.general_frame_subframe, text="Convert to CKPT after training?")
-        convert_to_ckpt_label_ttp = CreateToolTip(self.convert_to_ckpt_after_training_label, "Convert the model to a tensorflow checkpoint after training.")
-        self.convert_to_ckpt_after_training_label.grid(row=4, column=0, sticky="nsew")
-        self.convert_to_ckpt_after_training_var = tk.IntVar()
-        self.convert_to_ckpt_after_training_checkbox = ctk.CTkSwitch(self.general_frame_subframe,text='',variable=self.convert_to_ckpt_after_training_var)
-        self.convert_to_ckpt_after_training_checkbox.grid(row=4, column=1, sticky="nsew",padx=10)
-        
-        #use telegram updates dark mode
-        self.send_telegram_updates_label = ctk.CTkLabel(self.general_frame_subframe, text="Send Telegram Updates")
-        send_telegram_updates_label_ttp = CreateToolTip(self.send_telegram_updates_label, "Use Telegram updates to monitor training progress, must have a Telegram bot set up.")
-        self.send_telegram_updates_label.grid(row=6, column=0, sticky="nsew")
-        #create checkbox to toggle telegram updates and show telegram token and chat id
-        #create telegram token dark mode
-        self.telegram_token_label = ctk.CTkLabel(self.general_frame_subframe, text="Telegram Token",  state="disabled")
-        telegram_token_label_ttp = CreateToolTip(self.telegram_token_label, "The Telegram token for your bot.")
-        self.telegram_token_label.grid(row=7, column=0, sticky="nsew")
-        self.telegram_token_entry = ctk.CTkEntry(self.general_frame_subframe,  state="disabled")
-        self.telegram_token_entry.grid(row=7, column=1,columnspan=3, sticky="nsew")
-        self.telegram_token_entry.insert(0, self.telegram_token)
-        #create telegram chat id dark mode
-        self.telegram_chat_id_label = ctk.CTkLabel(self.general_frame_subframe, text="Telegram Chat ID",  state="disabled")
-        telegram_chat_id_label_ttp = CreateToolTip(self.telegram_chat_id_label, "The Telegram chat ID to send updates to.")
-        self.telegram_chat_id_label.grid(row=8, column=0, sticky="nsew")
-        self.telegram_chat_id_entry = ctk.CTkEntry(self.general_frame_subframe,  state="disabled")
-        self.telegram_chat_id_entry.grid(row=8, column=1,columnspan=3, sticky="nsew")
-        self.telegram_chat_id_entry.insert(0, self.telegram_chat_id)
-        
-        #add a switch to toggle runpod mode
-        self.cloud_mode_label = ctk.CTkLabel(self.general_frame_subframe, text="Cloud Training Export")
-        cloud_mode_label_ttp = CreateToolTip(self.cloud_mode_label, "Cloud mode will package up a quick trainer session for RunPod/Colab etc.")
-        self.cloud_mode_label.grid(row=9, column=0, sticky="nsew")
-        self.cloud_mode_var = tk.IntVar()
-        self.cloud_mode_checkbox = ctk.CTkSwitch(self.general_frame_subframe,variable=self.cloud_mode_var, command=self.toggle_runpod_mode)
-        self.cloud_mode_checkbox.grid(row=9, column=1, sticky="nsew")
-    '''
+    def check_dataset_folder(self,dataset_path):
+        #list files in dataset path
+        try:
+            files = os.listdir(dataset_path.get())
+        except:
+            return
+        wavs=True
+        train=True
+        Valid=True
+        #check if wavs folder exists
+        if 'wavs' not in files:
+            wavs = False
+        #check if train.txt exists
+        if 'train.txt' not in files:
+            train = False
+        #check if valid.txt exists
+        if 'valid.txt' not in files:
+            Valid = False
+        #if any of the above are false, return false
+        if wavs == False or train == False or Valid == False:
+            #show error message
+            messagebox.showerror("Error", "Dataset folder is not valid, please check the documentation for more info.")
+            dataset_path.delete(0, tk.END)
+    def browse_for_path_focus(self,entry_box):
+        #get the path from the user
+        path = fd.askdirectory()
+        #set the path to the entry box
+        #delete entry box text
+        entry_box.focus_set()
+        entry_box.delete(0, tk.END)
+        entry_box.insert(0, path)
+        self.focus_set()
     def toggle_runpod_mode(self):
         toggle = self.cloud_mode_var.get()
         #flip self.toggle
@@ -689,244 +614,66 @@ class App(ctk.CTk):
         self.ar_model_path_entry.grid(row=6, column=1, sticky="nsew")
         self.ar_model_path_entry.insert(0, self.path_to_ar_model)
         #create path to dvae model
-        #self.dvae_model_path_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Path to DVAE Model")
-        #dvae_model_path_label_ttp = CreateToolTip(self.dvae_model_path_label, "The path to the DVAE model.")
-        #self.dvae_model_path_label.grid(row=7, column=0, sticky="nsew")
-        #self.dvae_model_path_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe)
-        #self.dvae_model_path_entry.grid(row=7, column=1, sticky="nsew")
-        #self.dvae_model_path_entry.insert(0, self.path_to_dvae_model)
-
-        '''
-        #add a model variant dropdown
-        self.model_variant_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Model Variant")
-        model_variant_label_ttp = CreateToolTip(self.model_variant_label, "The model type you're training.")
-        self.model_variant_label.grid(row=0, column=0, sticky="nsew")
-        self.model_variant_var = tk.StringVar()
-        self.model_variant_var.set(self.model_variant)
-        self.model_variant_dropdown = ctk.CTkOptionMenu(self.advanced_settings_frame_subframe, values=self.model_variants, variable=self.model_variant_var)
-        #add attention optionMenu
-        self.attention_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Attention")
-        attention_label_ttp = CreateToolTip(self.attention_label, "The attention type to use. Flash Attention may enable lower VRAM training but Xformers will be faster and better for bigger batch sizes.")
-        self.attention_label.grid(row=1, column=0, sticky="nsew")
-        self.attention_var = tk.StringVar()
-        self.attention_var.set(self.attention)
-        self.attention_dropdown = ctk.CTkOptionMenu(self.advanced_settings_frame_subframe, values=self.attention_types, variable=self.attention_var)
-        #add a batch size entry
-
-        #add a seed entry
-        self.seed_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Seed")
-        seed_label_ttp = CreateToolTip(self.seed_label, "The seed to use for training.")
-        #self.seed_label.grid(row=1, column=0, sticky="nsew")
-        self.seed_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe)
-        #self.seed_entry.grid(row=1, column=1, sticky="nsew")
-        self.seed_entry.insert(0, self.seed_number)
-        #create resolution dark mode dropdown
-        self.resolution_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Resolution")
-        resolution_label_ttp = CreateToolTip(self.resolution_label, "The resolution of the images to train on.")
-        #self.resolution_label.grid(row=2, column=0, sticky="nsew")
-        self.resolution_var = tk.StringVar()
-        self.resolution_var.set(self.resolution)
-        self.resolution_dropdown = ctk.CTkOptionMenu(self.advanced_settings_frame_subframe, variable=self.resolution_var, values=self.possible_resolutions)
-        #self.resolution_dropdown.grid(row=2, column=1, sticky="nsew")
+    def txt_file_lines(self,p: str) -> int:
+            return len(Path(p).read_text().strip().split('\n'))
+    def calculate_training_parameters(self):
         
-        #create train batch size dark mode dropdown with values from 1 to 60
-        self.train_batch_size_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Train Batch Size")
-        train_batch_size_label_ttp = CreateToolTip(self.train_batch_size_label, "The batch size to use for training.")
-        #self.train_batch_size_label.grid(row=3, column=0, sticky="nsew")
-        self.train_batch_size_var = tk.StringVar()
-        self.train_batch_size_var.set(self.batch_size)
-        #make a list of values from 1 to 60 that are strings
-        #train_batch_size_values = 
-        self.train_batch_size_dropdown = ctk.CTkOptionMenu(self.advanced_settings_frame_subframe, variable=self.train_batch_size_var, values=[str(i) for i in range(1,61)])
-        #self.train_batch_size_dropdown.grid(row=3, column=1, sticky="nsew")
+        def div_spillover(n: int, bs: int) -> int: # returns new batch size
+            epoch_steps,remain = divmod(n,bs)
+            if epoch_steps*2 > bs: return bs # don't bother optimising this stuff if epoch_steps are high
+            if not remain: return bs # unlikely but still
 
-        #create train epochs dark mode 
-        self.train_epochs_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Train Epochs")
-        train_epochs_label_ttp = CreateToolTip(self.train_epochs_label, "The number of epochs to train for. An epoch is one pass through the entire dataset.")
-        #self.train_epochs_label.grid(row=4, column=0, sticky="nsew")
-        self.train_epochs_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe)
-        #self.train_epochs_entry.grid(row=4, column=1, sticky="nsew")
-        self.train_epochs_entry.insert(0, self.num_train_epochs)
-        
-        #create mixed precision dark mode dropdown
-        self.mixed_precision_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Mixed Precision")
-        mixed_precision_label_ttp = CreateToolTip(self.mixed_precision_label, "Use mixed precision training to speed up training, FP16 is recommended but requires a GPU with Tensor Cores. TF32 is recommended for RTX 30 series GPUs and newer.")
-        #self.mixed_precision_label.grid(row=5, column=0, sticky="nsew")
-        self.mixed_precision_var = tk.StringVar()
-        self.mixed_precision_var.set(self.mixed_precision)
-        self.mixed_precision_dropdown = ctk.CTkOptionMenu(self.advanced_settings_frame_subframe, variable=self.mixed_precision_var,values=["bf16","fp16","fp32","tf32"])
-        #self.mixed_precision_dropdown.grid(row=5, column=1, sticky="nsew")
-
-        #create use 8bit adam checkbox
-        self.use_8bit_adam_var = tk.IntVar()
-        self.use_8bit_adam_var.set(self.use_8bit_adam)
-        #create label
-        self.use_8bit_adam_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Use 8bit Adam")
-        use_8bit_adam_label_ttp = CreateToolTip(self.use_8bit_adam_label, "Use 8bit Adam to speed up training, requires bytsandbytes.")
-        #self.use_8bit_adam_label.grid(row=6, column=0, sticky="nsew")
-        #create checkbox
-        self.use_8bit_adam_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.use_8bit_adam_var,text='')
-        #self.use_8bit_adam_checkbox.grid(row=6, column=1, sticky="nsew")
-        #create use gradient checkpointing checkbox
-        self.use_gradient_checkpointing_var = tk.IntVar()
-        self.use_gradient_checkpointing_var.set(self.use_gradient_checkpointing)
-        #create label
-        self.use_gradient_checkpointing_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Use Gradient Checkpointing")
-        use_gradient_checkpointing_label_ttp = CreateToolTip(self.use_gradient_checkpointing_label, "Use gradient checkpointing to reduce RAM usage.")
-        #self.use_gradient_checkpointing_label.grid(row=7, column=0, sticky="nsew")
-        #create checkbox
-        self.use_gradient_checkpointing_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.use_gradient_checkpointing_var)
-        #self.use_gradient_checkpointing_checkbox.grid(row=7, column=1, sticky="nsew")
-        #create gradient accumulation steps dark mode dropdown with values from 1 to 60
-        self.gradient_accumulation_steps_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Gradient Accumulation Steps")
-        gradient_accumulation_steps_label_ttp = CreateToolTip(self.gradient_accumulation_steps_label, "The number of gradient accumulation steps to use, this is useful for training with limited GPU memory.")
-        #self.gradient_accumulation_steps_label.grid(row=8, column=0, sticky="nsew")
-        self.gradient_accumulation_steps_var = tk.StringVar()
-        self.gradient_accumulation_steps_var.set(self.accumulation_steps)
-        self.gradient_accumulation_steps_dropdown = ctk.CTkOptionMenu(self.advanced_settings_frame_subframe, variable=self.gradient_accumulation_steps_var, values=['1','2','3','4','5','6','7','8','9','10'])
-        #self.gradient_accumulation_steps_dropdown.grid(row=8, column=1, sticky="nsew")
-        #create learning rate dark mode entry
-        self.learning_rate_steps_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Learning Rate")
-        learning_rate_steps_label_ttp = CreateToolTip(self.learning_rate_steps_label, "The learning rate to use for training.")
-        #self.learning_rate_steps_label.grid(row=9, column=0, sticky="nsew")
-        self.learning_rate_steps_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe)
-        #self.learning_rate_steps_entry.grid(row=9, column=1, sticky="nsew")
-        self.learning_rate_steps_entry.insert(0, self.learning_rate)
-        #create learning rate scheduler dropdown
-        self.learning_rate_scheduler_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Learning Rate Scheduler")
-        learning_rate_scheduler_label_ttp = CreateToolTip(self.learning_rate_scheduler_label, "The learning rate scheduler to use for training.")
-        #self.learning_rate_scheduler_label.grid(row=10, column=0, sticky="nsew")
-        self.learning_rate_scheduler_var = tk.StringVar()
-        self.learning_rate_scheduler_var.set(self.learning_rate_schedule)
-        self.learning_rate_scheduler_dropdown = ctk.CTkOptionMenu(self.advanced_settings_frame_subframe, variable=self.learning_rate_scheduler_var, values=["linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"])
-        #self.learning_rate_scheduler_dropdown.grid(row=10, column=1, sticky="nsew")
-        #create num warmup steps dark mode entry
-        self.num_warmup_steps_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="LR Warmup Steps")
-        num_warmup_steps_label_ttp = CreateToolTip(self.num_warmup_steps_label, "The number of warmup steps to use for the learning rate scheduler.")
-        #self.num_warmup_steps_label.grid(row=11, column=0, sticky="nsew")
-        self.num_warmup_steps_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe)
-        #self.num_warmup_steps_entry.grid(row=11, column=1, sticky="nsew")
-        self.num_warmup_steps_entry.insert(0, self.learning_rate_warmup_steps)
-        #create use latent cache checkbox
-        #self.use_latent_cache_var = tk.IntVar()
-        #self.use_latent_cache_var.set(self.do_not_use_latents_cache)
-        #create label
-        #self.use_latent_cache_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Use Latent Cache")
-        #use_latent_cache_label_ttp = CreateToolTip(self.use_latent_cache_label, "Cache the latents to speed up training.")
-        #self.use_latent_cache_label.grid(row=12, column=0, sticky="nsew")
-        #create checkbox
-        #self.use_latent_cache_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.use_latent_cache_var)
-        #self.use_latent_cache_checkbox.grid(row=12, column=1, sticky="nsew")
-        #create save latent cache checkbox
-        #self.save_latent_cache_var = tk.IntVar()
-        #self.save_latent_cache_var.set(self.save_latents_cache)
-        #create label
-        #self.save_latent_cache_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Save Latent Cache")
-        #save_latent_cache_label_ttp = CreateToolTip(self.save_latent_cache_label, "Save the latents cache to disk after generation, will be remade if batch size changes.")
-        #self.save_latent_cache_label.grid(row=13, column=0, sticky="nsew")
-        #create checkbox
-        #self.save_latent_cache_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.save_latent_cache_var)
-        #self.save_latent_cache_checkbox.grid(row=13, column=1, sticky="nsew")
-        #create regnerate latent cache checkbox
-        self.regenerate_latent_cache_var = tk.IntVar()
-        self.regenerate_latent_cache_var.set(self.regenerate_latents_cache)
-        #create label
-        self.regenerate_latent_cache_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Regenerate Latent Cache")
-        regenerate_latent_cache_label_ttp = CreateToolTip(self.regenerate_latent_cache_label, "Force the latents cache to be regenerated.")
-        #self.regenerate_latent_cache_label.grid(row=14, column=0, sticky="nsew")
-        #create checkbox
-        self.regenerate_latent_cache_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.regenerate_latent_cache_var)
-        #self.regenerate_latent_cache_checkbox.grid(row=14, column=1, sticky="nsew")
-        #create train text encoder checkbox
-        self.train_text_encoder_var = tk.IntVar()
-        self.train_text_encoder_var.set(self.train_text_encoder)
-        #create label
-        self.train_text_encoder_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Train Text Encoder")
-        train_text_encoder_label_ttp = CreateToolTip(self.train_text_encoder_label, "Train the text encoder along with the UNET.")
-        #self.train_text_encoder_label.grid(row=15, column=0, sticky="nsew")
-        #create checkbox
-        self.train_text_encoder_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.train_text_encoder_var)
-        #self.train_text_encoder_checkbox.grid(row=15, column=1, sticky="nsew")
-        #create limit text encoder encoder entry
-        self.clip_penultimate_var = tk.IntVar()
-        self.clip_penultimate_var.set(self.clip_penultimate)
-        #create label
-        self.clip_penultimate_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Clip Penultimate")
-        clip_penultimate_label_ttp = CreateToolTip(self.clip_penultimate_label, "Train using the Penultimate layer of the text encoder.")
-        #create checkbox
-        self.clip_penultimate_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.clip_penultimate_var)
-        
-
-        self.limit_text_encoder_var = tk.StringVar()
-        self.limit_text_encoder_var.set(self.limit_text_encoder)
-        #create label
-        self.limit_text_encoder_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Limit Text Encoder")
-        limit_text_encoder_label_ttp = CreateToolTip(self.limit_text_encoder_label, "Stop training the text encoder after this many epochs, use % to train for a percentage of the total epochs.")
-        #self.limit_text_encoder_label.grid(row=16, column=0, sticky="nsew")
-        #create entry
-        self.limit_text_encoder_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe, textvariable=self.limit_text_encoder_var)
-        #self.limit_text_encoder_entry.grid(row=16, column=1, sticky="nsew")
-        
-        #create checkbox disable cudnn benchmark
-        self.disable_cudnn_benchmark_var = tk.IntVar()
-        self.disable_cudnn_benchmark_var.set(self.disable_cudnn_benchmark)
-        #create label for checkbox
-        self.disable_cudnn_benchmark_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="EXPERIMENTAL: Disable cuDNN Benchmark")
-        disable_cudnn_benchmark_label_ttp = CreateToolTip(self.disable_cudnn_benchmark_label, "Disable cuDNN benchmarking, may offer 2x performance on some systems and stop OOM errors.")
-        #self.disable_cudnn_benchmark_label.grid(row=17, column=0, sticky="nsew")
-        #create checkbox
-        self.disable_cudnn_benchmark_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.disable_cudnn_benchmark_var)
-        #self.disable_cudnn_benchmark_checkbox.grid(row=17, column=1, sticky="nsew")
-        #add conditional dropout entry
-        self.conditional_dropout_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Conditional Dropout")
-        conditional_dropout_label_ttp = CreateToolTip(self.conditional_dropout_label, "Precentage of probability to drop out a caption token to train the model to be more robust to missing words.")
-        self.conditional_dropout_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe)
-        self.conditional_dropout_entry.insert(0, self.conditional_dropout)
-        #create use EMA switch
-        self.use_ema_var = tk.IntVar()
-        self.use_ema_var.set(self.use_ema)
-        #create label
-        self.use_ema_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Use EMA")
-        use_ema_label_ttp = CreateToolTip(self.use_ema_label, "Use Exponential Moving Average to smooth the training paramaters. Will increase VRAM usage.")
-        #self.use_ema_label.grid(row=18, column=0, sticky="nsew")
-        #create checkbox
-        self.use_ema_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.use_ema_var)
-
-        #create with prior loss preservation checkbox
-        self.with_prior_loss_preservation_var = tk.IntVar()
-        self.with_prior_loss_preservation_var.set(self.with_prior_reservation)
-        #create label
-        self.with_prior_loss_preservation_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="With Prior Loss Preservation")
-        with_prior_loss_preservation_label_ttp = CreateToolTip(self.with_prior_loss_preservation_label, "Use the prior loss preservation method. part of Dreambooth.")
-        self.with_prior_loss_preservation_label.grid(row=19, column=0, sticky="nsew")
-        #create checkbox
-        self.with_prior_loss_preservation_checkbox = ctk.CTkSwitch(self.advanced_settings_frame_subframe, variable=self.with_prior_loss_preservation_var)
-        self.with_prior_loss_preservation_checkbox.grid(row=19, column=1, sticky="nsew")
-        #create prior loss preservation weight entry
-        self.prior_loss_preservation_weight_label = ctk.CTkLabel(self.advanced_settings_frame_subframe, text="Weight")
-        prior_loss_preservation_weight_label_ttp = CreateToolTip(self.prior_loss_preservation_weight_label, "The weight of the prior loss preservation loss.")
-        self.prior_loss_preservation_weight_label.grid(row=19, column=1, sticky="e")
-        self.prior_loss_preservation_weight_entry = ctk.CTkEntry(self.advanced_settings_frame_subframe)
-        self.prior_loss_preservation_weight_entry.grid(row=19, column=3, sticky="w")
-        self.prior_loss_preservation_weight_entry.insert(0, self.prior_loss_weight)
-        '''
-
+            if remain*2 < bs: # "easier" to get rid of remainder -- should increase bs
+                target_bs = n//epoch_steps
+            else: # easier to increase epoch_steps by 1 -- decrease bs
+                target_bs = n//(epoch_steps+1)
+            assert n%target_bs < epoch_steps+2 # should be very few extra 
+            return target_bs
+        try:
+            training_samples = self.txt_file_lines(self.dataset_path_entry.get() + '/train.txt')
+            val_samples  = self.txt_file_lines(self.dataset_path_entry.get() + '/valid.txt')
+        except:
+            #show error message
+            messagebox.showerror("Error", "Could not find dataset files. Please check the path and try again.")
+            return
+        if training_samples < int(self.train_batch_size_entry.get()):
+            print("WARNING: dataset is smaller than a single batch. This will almost certainly perform poorly. Trying anyway")
+            train_bs = training_samples
+        else:
+            train_bs = div_spillover(training_samples, int(self.train_batch_size_entry.get()))
+        if val_samples < int(self.val_batch_size_entry.get()):
+            val_bs = val_samples
+        else:
+            val_bs = div_spillover(val_samples, int(self.val_batch_size_entry.get()))
+        steps_per_epoch = training_samples//train_bs
+        first_decay = ast.literal_eval(self.learning_rate_steps_entry.get())[0]
+        lr_decay_epochs = [first_decay, first_decay*2, first_decay*14//5, first_decay*18//5]
+        lr_decay_steps = str([steps_per_epoch * e for e in lr_decay_epochs])
+        print_freq = min(100, max(20, steps_per_epoch))
+        val_freq = save_checkpoint_freq = print_freq * 3
+        self.train_batch_size_entry.delete(0, tk.END)
+        self.train_batch_size_entry.insert(0, str(train_bs))
+        self.val_batch_size_entry.delete(0, tk.END)
+        self.val_batch_size_entry.insert(0, str(val_bs))
+        self.steps_entry.delete(0, tk.END)
+        self.steps_entry.insert(0, str(steps_per_epoch))
+        self.learning_rate_steps_entry.delete(0, tk.END)
+        self.learning_rate_steps_entry.insert(0, str(lr_decay_steps))
+        self.print_status_frequency_entry.delete(0, tk.END)
+        self.print_status_frequency_entry.insert(0, str(print_freq))
+        self.save_frequency_entry.delete(0, tk.END)
+        self.save_frequency_entry.insert(0, str(val_freq))
     def update_DLAS(self):
-        #git
-        new_version = subprocess.check_output(["git", "ls-remote", "https://github.com/152334H/DL-Art-School.git","main"], cwd=Path(__file__).resolve().parent).strip().decode()[0:7]
-        #open the DLAS_hash.cfg file
-        #update the DLAS_hash.cfg file
-        with open("configs/DLAS_hash.cfg", "w") as f:
+        new_version = subprocess.check_output(["git", "ls-remote", "https://github.com/152334H/DL-Art-School.git","master"], cwd=Path(__file__).resolve().parent).strip().decode()[0:7]
+        with open("DLAS_hash.cfg", "w") as f:
             f.write(new_version)
-        #update the stabletuner
-        #self.update_DLASabletuner()
-        #git pull and wait for it to finish
         subprocess.run(["git", "stash"], cwd=Path(__file__).resolve().parent)
         subprocess.run(["git", "pull"], cwd=Path(__file__).resolve().parent)
         print('pulled')
         #restart the app
         restart(self)
     def packageForCloud(self):
+        #future work
         #check if there's an export folder in the cwd and if not create one
         if not os.path.exists("exports"):
             os.mkdir("exports")
@@ -1034,128 +781,14 @@ class App(ctk.CTk):
         shutil.copy('scripts' + os.sep + 'model_util.py', self.full_export_path + os.sep + 'scripts' + os.sep + 'model_util.py')
         #copy clip_seg to the scripts folder
         shutil.copy('scripts' + os.sep + 'clip_segmentation.py', self.full_export_path + os.sep + 'scripts' + os.sep + 'clip_segmentation.py')
-    
-    def aspect_ratio_mode_toggles(self, *args):
-        if self.use_aspect_ratio_bucketing_var.get() == 1:
-            self.with_prior_loss_preservation_var.set(0)
-            self.with_prior_loss_preservation_checkbox.configure(state="disabled")
-            self.aspect_ratio_bucketing_mode_label.configure(state="normal")
-            self.aspect_ratio_bucketing_mode_option_menu.configure(state="normal")
-            self.dynamic_bucketing_mode_label.configure(state="normal")
-            self.dynamic_bucketing_mode_option_menu.configure(state="normal")
-            
 
-        else:
-            self.with_prior_loss_preservation_checkbox.configure(state="normal")
-            self.aspect_ratio_bucketing_mode_label.configure(state="disabled")
-            self.aspect_ratio_bucketing_mode_option_menu.configure(state="disabled")
-            self.dynamic_bucketing_mode_label.configure(state="disabled")
-            self.dynamic_bucketing_mode_option_menu.configure(state="disabled")
-            
     
-    def open_file_dialog(self, entry):
-        """Opens a file dialog and sets the entry to the selected file."""
-        indexOfEntry = None
-        file_path = fd.askdirectory()
-        #get the entry name
-        
-        entry.delete(0, tk.END)
-        entry.insert(0, file_path)
-        #focus on the entry
-        entry.focus_set()
-        #unset the focus on the button
-        #self.master.focus_set()
-
-    def save_config(self, config_file=None):
-        #save the configure file
-        import json
-        #create a dictionary of all the variables
-        #ask the user for a file name
-        if config_file == None:
-            file_name = fd.asksaveasfilename(title = "Select file",filetypes = (("json files","*.json"),("all files","*.*")))
-            #check if json in file name
-            if ".json" not in file_name:
-                file_name += ".json"
-        else:
-            file_name = config_file
-        configure = {}
-        self.update_controlled_seed_sample()
-        self.update_sample_prompts()
-        self.update_concepts()
-        configure["concepts"] = self.concepts
-        #print(self.concepts)
-        configure["sample_prompts"] = self.sample_prompts
-        configure['add_controlled_seed_to_sample'] = self.add_controlled_seed_to_sample
-        configure["model_path"] = self.input_model_path_entry.get()
-        configure["vae_path"] = self.vae_model_path_entry.get()
-        configure["output_path"] = self.output_path_entry.get()
-        configure["send_telegram_updates"] = self.send_telegram_updates_var.get()
-        configure["telegram_token"] = self.telegram_token_entry.get()
-        configure["telegram_chat_id"] = self.telegram_chat_id_entry.get()
-        configure["resolution"] = self.resolution_var.get()
-        configure["batch_size"] = self.train_batch_size_var.get()
-        configure["train_epocs"] = self.train_epochs_entry.get()
-        configure["mixed_precision"] = self.mixed_precision_var.get()
-        configure["use_8bit_adam"] = self.use_8bit_adam_var.get()
-        configure["use_gradient_checkpointing"] = self.use_gradient_checkpointing_var.get()
-        configure["accumulation_steps"] = self.gradient_accumulation_steps_var.get()
-        configure["learning_rate"] = self.learning_rate_steps_entry.get()
-        configure["warmup_steps"] = self.num_warmup_steps_entry.get()
-        configure["learning_rate_scheduler"] = self.learning_rate_scheduler_var.get()
-        #configure["use_latent_cache"] = self.use_latent_cache_var.get()
-        #configure["save_latent_cache"] = self.save_latent_cache_var.get()
-        configure["regenerate_latent_cache"] = self.regenerate_latent_cache_var.get()
-        configure["train_text_encoder"] = self.train_text_encoder_var.get()
-        configure["with_prior_loss_preservation"] = self.with_prior_loss_preservation_var.get()
-        configure["prior_loss_preservation_weight"] = self.prior_loss_preservation_weight_entry.get()
-        configure["use_image_names_as_captions"] = self.use_image_names_as_captions_var.get()
-        configure["auto_balance_concept_datasets"] = self.auto_balance_dataset_var.get()
-        configure["add_class_images_to_dataset"] = self.add_class_images_to_dataset_var.get()
-        configure["number_of_class_images"] = self.number_of_class_images_entry.get()
-        configure["save_every_n_epochs"] = self.save_every_n_epochs_entry.get()
-        configure["number_of_samples_to_generate"] = self.number_of_samples_to_generate_entry.get()
-        configure["sample_height"] = self.sample_height_entry.get()
-        configure["sample_width"] = self.sample_width_entry.get()
-        configure["sample_random_aspect_ratio"] = self.sample_random_aspect_ratio_var.get()
-        configure['sample_on_training_start'] = self.sample_on_training_start_var.get()
-        configure['concepts'] = self.concepts
-        configure['aspect_ratio_bucketing'] = self.use_aspect_ratio_bucketing_var.get()
-        configure['seed'] = self.seed_entry.get()
-        configure['dataset_repeats'] = self.dataset_repeats_entry.get()
-        configure['limit_text_encoder_training'] = self.limit_text_encoder_entry.get()
-        configure['use_text_files_as_captions'] = self.use_text_files_as_captions_var.get()
-        configure['ckpt_version'] = self.ckpt_sd_version
-        configure['convert_to_ckpt_after_training'] = self.convert_to_ckpt_after_training_var.get()
-        configure['execute_post_conversion'] = self.convert_to_ckpt_after_training_var.get()
-        configure['disable_cudnn_benchmark'] = self.disable_cudnn_benchmark_var.get()
-        configure['sample_step_interval'] = self.sample_step_interval_entry.get()
-        configure['conditional_dropout'] = self.conditional_dropout_entry.get()
-        configure["clip_penultimate"] = self.clip_penultimate_var.get()
-        configure['use_ema'] = self.use_ema_var.get()
-        configure['aspect_ratio_bucketing_mode'] = self.aspect_ratio_bucketing_mode_var.get()
-        configure['dynamic_bucketing_mode'] = self.dynamic_bucketing_mode_var.get()
-        configure['model_variant'] = self.model_variant_var.get()
-        configure['masked_training'] = self.masked_training_var.get()
-        configure['normalize_masked_area_loss'] = self.normalize_masked_area_loss_var.get()
-        configure['unmasked_probability'] = self.unmasked_probability_var.get()
-        configure['max_denoising_strength'] = self.max_denoising_strength_var.get()
-        configure['fallback_mask_prompt'] = self.fallback_mask_prompt_entry.get()
-        configure['attention'] = self.attention_var.get()
-        configure['batch_prompt_sampling'] = int(self.batch_prompt_sampling_optionmenu_var.get())
-        configure['shuffle_dataset_per_epoch'] = self.shuffle_dataset_per_epoch_var.get()
-        #save the configure file
-        #if the file exists, delete it
-        if os.path.exists(file_name):
-            os.remove(file_name)
-        with open(file_name, "w",encoding='utf-8') as f:
-            json.dump(configure, f, indent=4)
-            f.close()
     
     def load_config(self,file_name=None):
         #load the configure file
         #ask the user for a file name
         if file_name == None:
-            file_name = fd.askopenfilename(title = "Select file",filetypes = (("yaml files","*.yml"),("all files","*.*")))
+            file_name = fd.askopenfilename(title = "Select file",filetypes = (("yaml files","*.*"),))
         if file_name == "":
             return
         #load the configure file
@@ -1165,7 +798,7 @@ class App(ctk.CTk):
         self.project_name_entry.delete(0, tk.END)
         self.project_name_entry.insert(0, configure["name"])
         self.gpu_ids_entry.delete(0, tk.END)
-        self.gpu_ids_entry.insert(0, configure["gpu_ids"])
+        self.gpu_ids_entry.insert(0, str(configure["gpu_ids"]))
         self.enable_checkpointing_var.set(configure["checkpointing_enabled"])
         self.use_fp16_var.set(configure["fp16"])
         self.use_wandb_var.set(configure["wandb"])
@@ -1210,6 +843,8 @@ class App(ctk.CTk):
         self.update()
     
     def process_inputs(self,export=None):
+        training_samples = self.txt_file_lines(self.dataset_path_entry.get() + '/train.txt')
+        val_samples  = self.txt_file_lines(self.dataset_path_entry.get() + '/valid.txt')
         #collect and process all the inputs
         self.project_name = self.project_name_entry.get().replace(' ', '_')
         self.gpu_ids = ast.literal_eval(self.gpu_ids_entry.get())
@@ -1218,13 +853,23 @@ class App(ctk.CTk):
         self.use_wandb = bool(self.use_wandb_var.get())
         self.use_tb_logger = bool(self.use_tb_logger_var.get())
         self.train_batch_size = int(self.train_batch_size_entry.get())
+        if self.train_batch_size > training_samples:
+            self.train_batch_size = training_samples
+            print("Warning: train batch size is larger than the number of training samples. Setting train batch size to the number of training samples.")
         self.valid_batch_size = int(self.val_batch_size_entry.get())
+        if self.valid_batch_size > val_samples:
+            self.valid_batch_size = val_samples
+            print("Warning: validation batch size is larger than the number of validation samples. Setting validation batch size to the number of validation samples.")
         self.path_to_lj_dataset = self.dataset_path_entry.get()
         self.path_to_train = os.path.join(self.path_to_lj_dataset, 'train.txt')
         self.path_to_valid = os.path.join(self.path_to_lj_dataset, 'valid.txt')
         self.iterations_number = int(self.steps_entry.get())
         self.warmup_steps = int(self.warmup_steps_entry.get())
         self.gradient_accumlation_steps = int(self.gradient_accumulation_steps_entry.get())
+        if self.gradient_accumlation_steps > self.train_batch_size or self.gradient_accumlation_steps > training_samples or self.gradient_accumlation_steps > val_samples:
+            #find the smallest number that is a divisor of the batch size and the number of samples
+            self.gradient_accumlation_steps = 1
+            print("Warning: gradient accumulation steps is larger than the number of training samples or validation samples or train batch size. Setting gradient accumulation steps to 1.")
         self.learning_rate = self.learning_rate_entry.get()
         self.learning_rate_steps = ast.literal_eval(self.learning_rate_steps_entry.get())
         self.print_status_frequency = int(self.print_status_frequency_entry.get())
@@ -1268,14 +913,6 @@ class App(ctk.CTk):
         self.base_config['logger']['save_checkpoint_freq'] = self.save_frequency
         self.base_config['logger']['visual_debug_rate'] = self.visual_debug_rate
         #fix yaml
-        # =TaggedString('!!float', str(self.base_config['steps']['gpt_train']['optimizer_params']['lr']))
-        #save new config
-        import numpy as np
-
-        def format_float(num):
-            return np.format_float_positional(num, trim='-')
-        #self.base_config['steps']['gpt_train']['optimizer_params']['lr'] = '!!float '+format_float(self.base_config['steps']['gpt_train']['optimizer_params']['lr'])
-        #self.base_config['steps']['gpt_train']['optimizer_params']['weight_decay'] = float("{:.8f}".format(self.base_config['steps']['gpt_train']['optimizer_params']['weight_decay']))
         with open('experiments/'+self.project_name+'_config.yaml', 'w') as f:
             yaml.dump(self.base_config, f)
         #fix yaml bullshit, rumel is not saving float and array values correctly
@@ -1289,9 +926,12 @@ class App(ctk.CTk):
             #write the fixed yaml to the config file
             with open('experiments/'+self.project_name+'_config.yaml', 'w') as f:
                 f.write(data)
-        quit()
-        mode = 'normal'
-        #leaving this for future cloud export
+            with open('experiments/'+'DLAS_last_run.yaml', 'w') as f:
+                f.write(data)
+        #mode = 'normal'
+        export == False
+        #leaving this for future cloud expor
+        
         '''
         if self.cloud_mode == False and export == None:
             #check if output path exists
@@ -1323,27 +963,22 @@ class App(ctk.CTk):
             self.export_name = self.output_path.split('/')[-1].split('\\')[-1] + '_' + dt_string
             self.packageForCloud()
         '''
-        
-        self.save_config('DLAS_last_run.json')
-        
-        
+                
         if export == False:
             #save the bat file
-            with open("scripts/train.bat", "w", encoding="utf-8") as f:
-                f.write(batBase)
+            #batBase = ''
+            #with open("scripts/train.bat", "w", encoding="utf-8") as f:
+            #    f.write(batBase)
             #close the window
             self.destroy()
             #run the bat file
             self.quit()
-            train = os.system(r".\scripts\train.bat")
+            #change the working directory to the codes directory
+            os.chdir('codes')
+            run('python train.py -opt ../experiments/'+self.project_name+'_config.yaml')
             #if exit code is 0, then the training was successful
-            if train == 0:
-                app = App()
-                app.mainloop()
-            #if user closed the window or keyboard interrupt, then cancel conversion
-            elif train == 1:
-                os.system("pause")
-            
+            os.system("pause")
+        '''
             #restart the app
         elif export == 'win':
             with open("train.bat", "w", encoding="utf-8") as f:
@@ -1370,7 +1005,7 @@ class App(ctk.CTk):
             messagebox.showinfo("Export", "Copied new training command to clipboard.")
             return
         elif export == 'Linux' and self.cloud_mode == True:
-            notebook = 'resources/stableTuner_notebook.ipynb'
+            notebook = 'resources/DLAS_notebook.ipynb'
             #load the notebook as a dictionary
             with open(notebook) as f:
                 nb = json.load(f)
@@ -1407,7 +1042,7 @@ class App(ctk.CTk):
             #move the zip file to the export folder
             shutil.move('payload.zip', self.full_export_path)
             #save the notebook to the export folder
-            with open(self.full_export_path+os.sep+'stableTuner_notebook.ipynb', 'w') as f:
+            with open(self.full_export_path+os.sep+'DLAS_notebook.ipynb', 'w') as f:
                 json.dump(nb, f)
             #delete everything in the export folder except the zip file and the notebook
             for file in os.listdir(self.full_export_path):
@@ -1422,15 +1057,12 @@ class App(ctk.CTk):
                         os.remove(self.full_export_path+os.sep+file)
             #show message
             messagebox.showinfo("Success", f"Your cloud\linux payload is ready to go!\nSaved to: {self.full_export_path}\n\nUpload the files and run the notebook to start training.")
-        
-
+        '''
 
 
 def restart(instance):
     instance.destroy()
-    #os.startfile(os.getcwd()+'/scripts/configuration_gui.py')
     app = App()
     app.mainloop()
-#root = ctk.CTk()
 app = App()
 app.mainloop()
