@@ -49,7 +49,6 @@ def check_versions():
 
 #uninstall tensorboard so it works
 #download dvae https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth
-'''
 print("Downloading DVAE...")
 r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth", allow_redirects=True)
 #save to experiments
@@ -61,7 +60,6 @@ r = requests.get("https://huggingface.co/jbetker/tortoise-tts-v2/resolve/main/.m
 open('experiments/autoregressive.pth', 'wb').write(r.content)
 
 run("pip uninstall tensorboard -y", "Uninstalling Tensorboard")
-'''
 
 base_dir = os.path.dirname(os.getcwd())
 #repo = git.Repo(base_dir)
