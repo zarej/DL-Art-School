@@ -16,6 +16,9 @@ einops
 lambda-networks
 mup
 
+#UI
+customtkinter
+
 # For image generation stuff
 opencv-python
 kornia
