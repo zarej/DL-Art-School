@@ -186,7 +186,6 @@ class App(ctk.CTk):
         self.base_config_path = './codes/utils/BASE_gpt.yaml'
         with open(self.base_config_path, 'r') as stream:
             self.base_config = yaml.load(stream)
-        print(self.base_config['name'])
         #common variables first
         self.project_name = ''
         self.gpu_ids = '[0]'
