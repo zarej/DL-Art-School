@@ -241,7 +241,8 @@ class UnifiedVoice(nn.Module):
                  mel_length_compression=1024, number_text_tokens=256,
                  start_text_token=255, stop_text_token=0, number_mel_codes=8194, start_mel_token=8192,
                  stop_mel_token=8193, train_solo_embeddings=False, use_mel_codes_as_input=True,
-                 checkpointing=True, average_conditioning_embeddings=False, freeze_everything_but_position_embeddings=False):
+                 checkpointing=True, average_conditioning_embeddings=False, freeze_everything_but_position_embeddings=False,
+                 tortoise_compat=True):
         """
         Args:
             layers: Number of layers in transformer stack.
@@ -264,6 +265,7 @@ class UnifiedVoice(nn.Module):
         """
         super().__init__()
 
+        self.tortoise_compat = tortoise_compat
         self.number_text_tokens = number_text_tokens
         self.start_text_token = start_text_token
         self.stop_text_token = stop_text_token
@@ -382,6 +384,9 @@ class UnifiedVoice(nn.Module):
         If return_attentions is specified, only logits are returned.
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
+        if self.tortoise_compat:
+            wav_lengths *= self.mel_length_compression
+        
         # This model will receive micro-batches with a ton of padding for both the text and MELs. Ameliorate this by
         # chopping the inputs by the maximum actual length.
         max_text_len = text_lengths.max()
@@ -410,14 +415,17 @@ class UnifiedVoice(nn.Module):
         mel_emb = self.mel_embedding(mel_inp)
         mel_emb = mel_emb + self.mel_pos_embedding(mel_codes)
 
+        sub = -2 if self.tortoise_compat else -1
         if text_first:
             text_logits, mel_logits = self.get_logits(conds, text_emb, self.text_head, mel_emb, self.mel_head, get_attns=return_attentions, return_latent=return_latent)
+            #print(f'get_logits(\n\t{conds.shape},\n\t{text_emb.shape},\n\t{self.text_head},\n\t{mel_emb.shape},\n\t{self.mel_head},\n\tget_attns={return_attentions},\n\treturn_latent={return_latent}\n) = {text_logits.shape}, {mel_logits.shape}')
+
             if return_latent:
-                return mel_logits[:, :-1]  # Despite the name, these are not logits.
+                return mel_logits[:, :sub]  # Despite the name, these are not logits.
         else:
             mel_logits, text_logits = self.get_logits(conds, mel_emb, self.mel_head, text_emb, self.text_head, get_attns=return_attentions, return_latent=return_latent)
             if return_latent:
-                return text_logits[:, :-1]  # Despite the name, these are not logits
+                return text_logits[:, :sub]  # Despite the name, these are not logits
 
         if return_attentions:
             return mel_logits
