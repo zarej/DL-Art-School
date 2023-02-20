@@ -281,7 +281,7 @@ class App(ctk.CTk):
                         #sort the files by date
                         files = sorted(os.listdir(os.path.join(model_path, dir,'models')), key=lambda x: os.path.getmtime(os.path.join(model_path, dir,'models', x)))
                         for file in files:
-                            if '0_' not in file:
+                            if not file.startswith('0_'):
                                 if 'ema' not in file.lower():
                                     return os.path.join(model_path, dir,'models',file)
         return ''
