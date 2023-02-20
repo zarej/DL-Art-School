@@ -12,6 +12,12 @@ import customtkinter as ctk
 import subprocess
 from pathlib import Path
 import ast
+from glob import glob
+import sys
+from contextlib import contextmanager
+from time import time
+from typing import Dict, List
+
 from ruamel.yaml import YAML
 yaml = YAML()
 yaml.preserve_quotes = True
@@ -26,6 +32,23 @@ def run(command, desc=None, errdesc=None, custom_env=None):
 
         result = subprocess.run(command, shell=True, env=os.environ if custom_env is None else custom_env)
         return result
+def run_quiet(command, desc=None, errdesc=None, custom_env=None):
+    if desc is not None:
+        print(desc)
+
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
+
+    if result.returncode != 0:
+
+        message = f"""{errdesc or 'Error running command'}.
+Command: {command}
+Error code: {result.returncode}
+stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
+stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
+"""
+        raise RuntimeError(message)
+
+    return result.stdout.decode(encoding="utf8", errors="ignore")
 class CreateToolTip(object):
     """
     create a tooltip for a given widget
@@ -155,6 +178,8 @@ class App(ctk.CTk):
         self.sidebar_button_12 = ctk.CTkButton(self.sidebar_frame,text='Start Training!', command=lambda : self.process_inputs(export=False))
         #self.sidebar_button_12.bind("<Button-3>", self.create_right_click_menu_export)
         self.sidebar_button_12.grid(row=14, column=0, padx=20, pady=5)
+        self.side_playground_button = ctk.CTkButton(self.sidebar_frame,text='Playground', command=self.playground_nav_button_event)
+        self.side_playground_button.grid(row=15, column=0, padx=20, pady=5)
         self.general_frame = ctk.CTkFrame(self, width=140, corner_radius=0,fg_color='transparent')
         self.general_frame.grid_columnconfigure(0, weight=10)
         self.general_frame_subframe = ctk.CTkScrollableFrame(self.general_frame,width=150,height=500, corner_radius=20)
@@ -170,6 +195,15 @@ class App(ctk.CTk):
         self.create_advanced_settings_widgets()
         self.apply_general_style_to_widgets(self.advanced_settings_frame_subframe)
         self.override_training_style_widgets()
+        self.playground_frame = ctk.CTkFrame(self, width=400, corner_radius=0,fg_color='transparent')
+        self.playground_frame.grid_columnconfigure(0, weight=1)
+        self.playground_frame_subframe = ctk.CTkFrame(self.playground_frame,width=400, corner_radius=20)
+        self.playground_frame_subframe.grid_columnconfigure(0, weight=1)
+        self.playground_frame_subframe.grid_columnconfigure(1, weight=1)
+        self.playground_frame_subframe.grid(row=2, column=0,sticky="nsew", padx=20, pady=20)
+        self.create_playground_widgets()
+        self.apply_general_style_to_widgets(self.playground_frame_subframe)
+
         self.select_frame_by_name('general') 
         self.update()
         
@@ -224,6 +258,37 @@ class App(ctk.CTk):
 
         #configurator variables
         self.update_available = False
+
+        #playground variables
+        self.playground_api = None
+        self.playground_model_path = self.find_latest_generated_model()
+        self.playground_seed = ''
+        self.playground_text = ''
+        self.playground_voice_dir = ''
+        self.playground_compare = False
+        self.playground_candidates = 3
+        self.playground_use_training_data = True
+    def find_latest_generated_model(self):
+        model_path = './experiments'
+        #sort the directories by date
+        dirs = sorted(os.listdir(model_path), key=lambda x: os.path.getmtime(os.path.join(model_path, x)))
+        for dir in dirs:
+            #if is dir
+            if os.path.isdir(os.path.join(model_path, dir)):
+                if 'archived' not in dir:
+                    #check if there are files under the model directory
+                    if len(os.listdir(os.path.join(model_path, dir,'models'))) > 0:
+                        #sort the files by date
+                        files = sorted(os.listdir(os.path.join(model_path, dir,'models')), key=lambda x: os.path.getmtime(os.path.join(model_path, dir,'models', x)))
+                        for file in files:
+                            if not file.startswith('0_'):
+                                if 'ema' not in file.lower():
+                                    return os.path.join(model_path, dir,'models',file)
+        return ''
+        return None
+    def install_tortoise(self):
+        run('git clone https://github.com/152334H/tortoise-tts-fast', desc="Cloning Tortoise TTS Fast")
+        run('python -m pip install -e tortoise-tts-fast/.', desc="Installing Tortoise TTS Fast")
     def select_frame_by_name(self, name):
         # set button color for selected button
         self.sidebar_button_1.configure(fg_color=("gray75", "gray25") if name == "general" else "transparent")
@@ -238,13 +303,31 @@ class App(ctk.CTk):
             self.advanced_settings_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.advanced_settings_frame.grid_forget()
+        if name == "playground":
+            #check if tortoise-tts-fast exists
+            if os.path.exists("./tortoise-tts-fast"):
+                self.playground_frame.grid(row=0, column=1, sticky="nsew")
+            else:
+                #yes no messagebox
+                if messagebox.askyesno("Tortoise TTS Fast not found", "Tortoise TTS Fast is required in order to do inference. Do you want me to set it up?"):
+                    #download tortoise-tts-fast
+                    self.install_tortoise()
+                    #show messagebox
+                    messagebox.showinfo("Tortoise TTS Fast installed", "Tortoise TTS Fast has been installed. Please restart the application, if there were errors, delete the tortoise-tts-fast folder and try again.")
+                    self.destroy()
+                    self.quit()
+                else:
+                    self.playground_frame.grid_forget()
+        else:
+            self.playground_frame.grid_forget()
 
     def general_nav_button_event(self):
         self.select_frame_by_name("general")
 
     def training_nav_button_event(self):
         self.select_frame_by_name("training")
-
+    def playground_nav_button_event(self):
+        self.select_frame_by_name("playground")
 
     #create a right click menu for entry widgets
     def create_right_click_menu(self, event):
@@ -518,7 +601,32 @@ class App(ctk.CTk):
         self.visual_debug_rate_entry = ctk.CTkEntry(self.general_frame_subframe)
         self.visual_debug_rate_entry.grid(row=20, column=1, sticky="nsew")
         self.visual_debug_rate_entry.insert(0, self.visual_debug_rate)
-
+    def start_tts_api(self,path):
+        self.playground_model_path_entry.configure(state='disabled')
+        #check if TextToSpeech is already loaded
+        if self.playground_api == None:
+            sys.path.append('./tortoise-tts-fast/tortoise')
+            from api import TextToSpeech
+            from inference import save_gen_with_voicefix
+            from tortoise.utils.audio import load_required_audio, check_audio
+        
+        if path == None:
+            self.playground_api = TextToSpeech(
+            high_vram=True,
+            kv_cache=True,
+            ar_checkpoint=None,)
+            return
+        if path.get() == '' or '.pth' not in path.get():
+            print('No model selected')
+            return
+        else:
+            
+            self.playground_api = TextToSpeech(
+            high_vram=True,
+            kv_cache=True,
+            ar_checkpoint=path.get() if path != None else None
+            )
+            
     def check_dataset_folder(self,dataset_path):
         #list files in dataset path
         try:
@@ -613,6 +721,206 @@ class App(ctk.CTk):
         self.ar_model_path_entry.grid(row=6, column=1, sticky="nsew")
         self.ar_model_path_entry.insert(0, self.path_to_ar_model)
         #create path to dvae model
+    def create_playground_widgets(self):
+        self.playground_frame_title = ctk.CTkLabel(self.playground_frame, text="Model Playground", font=ctk.CTkFont(size=20, weight="bold"))
+        self.playground_frame_title.grid(row=0, column=0, padx=20, pady=20)  
+        #create a label
+        #self.playground_label = ctk.CTkLabel(self.playground_frame_subframe, text="Enter a model path to load the model to memory", font=ctk.CTkFont(size=15, weight="bold"))
+        #self.playground_label.grid(row=0, sticky="n",columnspan=3)
+        #create empty label
+
+        #create label and entry and button to model path
+        self.playground_model_path_label = ctk.CTkLabel(self.playground_frame_subframe, text="Model Path")
+        playground_model_path_label_ttp = CreateToolTip(self.playground_model_path_label, "The path to the model.")
+        self.playground_model_path_label.grid(row=1, column=0, sticky="nsew")
+        self.playground_model_path_entry = ctk.CTkEntry(self.playground_frame_subframe, width=100)
+        self.playground_model_path_entry.grid(row=1, column=1, sticky="nsew")
+        self.playground_model_path_entry.insert(0, self.playground_model_path)
+        self.playground_model_path_entry.bind("<FocusOut>", lambda event: self.start_tts_api(self.playground_model_path_entry))
+
+        self.playground_model_path_button = ctk.CTkButton(self.playground_frame_subframe, width=10,text="...", command=lambda: self.browse_for_path_focus(self.dataset_path_entry))
+        self.playground_model_path_button.grid(row=1, column=2, sticky="nsew")
+        #create text box for text input
+        self.playground_text_label = ctk.CTkLabel(self.playground_frame_subframe, text="Text")
+        playground_text_label_ttp = CreateToolTip(self.playground_text_label, "The text to use for the model.")
+        self.playground_text_label.grid(row=2, column=0, sticky="nsew")
+        self.playground_text_entry = ctk.CTkEntry(self.playground_frame_subframe, width=100)
+        self.playground_text_entry.grid(row=2, column=1, sticky="nsew")
+        self.playground_text_entry.insert(0, self.playground_text)
+
+        #create label and entry for seed
+        self.playground_seed_label = ctk.CTkLabel(self.playground_frame_subframe, text="Seed")
+        playground_seed_label_ttp = CreateToolTip(self.playground_seed_label, "The seed to use for the model.")
+        self.playground_seed_label.grid(row=3, column=0, sticky="nsew")
+        self.playground_seed_entry = ctk.CTkEntry(self.playground_frame_subframe)
+        self.playground_seed_entry.grid(row=3, column=1, sticky="nsew")
+        self.playground_seed_entry.insert(0, self.playground_seed)
+        #create quality selection
+        self.playground_quality_label = ctk.CTkLabel(self.playground_frame_subframe, text="Quality Preset")
+        playground_quality_label_ttp = CreateToolTip(self.playground_quality_label, "The quality of the model.")
+        self.playground_quality_label.grid(row=4, column=0, sticky="nsew")
+        self.playground_quality_entry = ctk.CTkOptionMenu(self.playground_frame_subframe, values=["ultra_fast", "very_fast", "fast", "standard", "high_quality"])
+        self.playground_quality_entry.grid(row=4, column=1, sticky="nsew")
+        #create amount of canidates to generate label and entry
+        self.playground_candidates_label = ctk.CTkLabel(self.playground_frame_subframe, text="Candidates")
+        playground_candidates_label_ttp = CreateToolTip(self.playground_candidates_label, "The amount of candidates to generate.")
+        self.playground_candidates_label.grid(row=5, column=0, sticky="nsew")
+        self.playground_candidates_entry = ctk.CTkEntry(self.playground_frame_subframe)
+        self.playground_candidates_entry.grid(row=5, column=1, sticky="nsew")
+        self.playground_candidates_entry.insert(0, self.playground_candidates)
+        #create compare to original switch
+        self.playground_compare_to_original_var = tk.IntVar()
+        self.playground_compare_to_original_var.set(self.playground_compare)
+        #label
+        self.playground_compare_to_original_label = ctk.CTkLabel(self.playground_frame_subframe, text="Compare to Original")
+        playground_compare_to_original_label_ttp = CreateToolTip(self.playground_compare_to_original_label, "Will generate a comparison between the original and the finetuned model")
+        self.playground_compare_to_original_label.grid(row=6, column=0, sticky="nsew")
+        #ctk switch
+        self.playground_compare_to_original_switch = ctk.CTkSwitch(self.playground_frame_subframe, variable=self.playground_compare_to_original_var)
+        self.playground_compare_to_original_switch.grid(row=6, column=1, sticky="nsew")
+
+        #create use training data switch
+        self.playground_use_training_data_var = tk.IntVar()
+        self.playground_use_training_data_var.set(self.playground_use_training_data)
+        #label
+        self.playground_use_training_data_label = ctk.CTkLabel(self.playground_frame_subframe, text="Use Training Data as Voice")
+        playground_use_training_data_label_ttp = CreateToolTip(self.playground_use_training_data_label, "Whether to use training data or not.")
+        self.playground_use_training_data_label.grid(row=7, column=0, sticky="nsew")
+        #ctk switch
+        self.playground_use_training_data_switch = ctk.CTkSwitch(self.playground_frame_subframe, variable=self.playground_use_training_data_var, command=self.enable_voice_dir)
+        self.playground_use_training_data_switch.grid(row=7, column=1, sticky="nsew")
+        
+
+        #create voice directory label and entry
+        self.playground_voice_dir_label = ctk.CTkLabel(self.playground_frame_subframe, text="Voice Directory",state="disabled")
+        playground_voice_dir_label_ttp = CreateToolTip(self.playground_voice_dir_label, "The directory of the voice.")
+        self.playground_voice_dir_label.grid(row=8, column=0, sticky="nsew")
+        self.playground_voice_dir_entry = ctk.CTkEntry(self.playground_frame_subframe, width=100,state="disabled")
+        self.playground_voice_dir_entry.grid(row=8, column=1, sticky="nsew")
+        self.playground_voice_dir_entry.insert(0, self.playground_voice_dir)
+        #create generate button
+        self.playground_generate_button = ctk.CTkButton(self.playground_frame_subframe, text="Generate", command=lambda: self.generate_playground())
+        self.playground_generate_button.grid(row=10, column=0, sticky="nsew")
+    def enable_voice_dir(self):
+        if self.playground_use_training_data_var.get() != 1:
+            self.playground_voice_dir_label.configure(state="normal")
+            self.playground_voice_dir_entry.configure(state="normal")
+        else:
+            self.playground_voice_dir_label.configure(state="disabled")
+            self.playground_voice_dir_entry.configure(state="disabled")
+    def generate_playground(self):
+        import torch
+        from tortoise.inference import save_gen_with_voicefix
+        from tortoise.utils.audio import load_required_audio, check_audio
+        def get_voices(voice_dir):
+            voices: Dict[str, List[str]] = {}
+            subj = voice_dir
+            sub = os.path.basename(subj)
+            if os.path.isdir(subj):
+                voices[sub] = (
+                    list(glob(f"{subj}/*.wav"))
+                    + list(glob(f"{subj}/*.mp3"))
+                    + list(glob(f"{subj}/*.pth"))
+                        )
+            return voices
+        @contextmanager
+        def timeit(desc=""):
+            start = time()
+            yield
+            print(f"{desc} took {time() - start:.2f} seconds")
+        def process_playground(original=False):
+            #try and find the dataset path from the model path
+            #current model path
+            model_path = self.playground_model_path_entry.get()
+            #if ends with pth
+            if model_path.endswith(".pth"):
+                #get the full path to the parent directory
+                train_path = os.path.dirname(os.path.dirname(model_path))
+                #list files in train path
+                files = os.listdir(train_path) 
+                #find the yaml file
+                for file in files:
+                    if file.endswith(".yaml"):
+                        #get the full path to the yaml file
+                        yaml_path = os.path.join(train_path,file)
+                        #open the yaml file
+                        with open(yaml_path, 'r') as stream:
+                            #load the yaml file
+                            data_loaded = yaml.load(stream)
+                            #get the dataset path
+                            voice_dir = data_loaded['datasets']['train']['path'].replace('train.txt','wavs')
+                            if original == False:
+                                k = data_loaded['name']
+                            else:
+                                k = "original_" + data_loaded['name']
+                            if self.playground_use_training_data_var.get() == 0:
+                                voice_dir = self.playground_voice_dir_entry.get()
+                                if original == False:
+                                    k = os.path.basename(voice_dir)
+                                else:
+                                    k = "original_" + os.path.basename(voice_dir)
+                            if not os.path.isdir(voice_dir):
+                                messagebox.showerror("Error", "Could not find training data directory.")
+                                return
+                            break
+            voice_samples = None
+            conditioning_latents = None
+            #k = os.path.basename(voice_dir)
+            #if is a directory, use all voices in it
+            if os.path.isdir(voice_dir):
+                voices = get_voices(voice_dir)
+                paths = voices[os.path.basename(voice_dir)]
+                if len(paths) == 1 and paths[0].endswith(".pth"):
+                    voice_samples = None
+                    conditioning_latents = torch.load(paths[0])
+                else:
+                    conds = []
+                    for cond_path in paths:
+                        c = load_required_audio(cond_path)
+                        conds.append(c)
+                    voice_samples = conds
+                    conditioning_latents = None
+            with timeit(
+                f"Generating candidates)"
+            ):
+                gen, dbg_state = self.playground_api.tts_with_preset(
+                    self.playground_text_entry.get(),
+                    k=int(self.playground_candidates_entry.get()),
+                    voice_samples=voice_samples,
+                    conditioning_latents=conditioning_latents,
+                    preset=self.playground_quality_entry.get(),
+                    use_deterministic_seed=int(self.playground_seed_entry.get()) if self.playground_seed_entry.get() != "" else None,
+                    return_deterministic_state=True,
+                    #cvvp_amount=args.cvvp_amount,
+                    #half=args.half,
+                    #original_tortoise=args.original_tortoise,
+                )
+            
+            if isinstance(gen, list):
+                for j, g in enumerate(gen):
+                    save_gen_with_voicefix(
+                        g,
+                        os.path.join('results', f"{k}_{j}.wav"),
+                        voicefixer=False, #disabled for now as the quality is not good
+                    )
+            else:
+                save_gen_with_voicefix(
+                    gen,
+                    os.path.join('results', f"{k}_{k}.wav"),
+                    voicefixer=False, #disabled for now as the quality is not good
+                )
+        if self.playground_compare_to_original_var.get() == 1:
+            #run twice, once with original and once with new
+            #original
+            print("Generating from finetuned model")
+            process_playground()
+            print("Generating from original model")
+            self.start_tts_api(None)
+            process_playground(original=True)
+            print('Reloading finetuned model')
+            self.start_tts_api(self.playground_model_path_entry)
+        else:
+            process_playground()
     def txt_file_lines(self,p: str) -> int:
             return len(Path(p).read_text().strip().split('\n'))
     def calculate_training_parameters(self):
@@ -654,8 +962,8 @@ class App(ctk.CTk):
         self.train_batch_size_entry.insert(0, str(train_bs))
         self.val_batch_size_entry.delete(0, tk.END)
         self.val_batch_size_entry.insert(0, str(val_bs))
-        self.steps_entry.delete(0, tk.END)
-        self.steps_entry.insert(0, str(steps_per_epoch))
+        #self.steps_entry.delete(0, tk.END)
+        #self.steps_entry.insert(0, str(steps_per_epoch))
         self.learning_rate_steps_entry.delete(0, tk.END)
         self.learning_rate_steps_entry.insert(0, str(lr_decay_steps))
         self.print_status_frequency_entry.delete(0, tk.END)

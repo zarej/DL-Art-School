@@ -31,9 +31,13 @@ stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.st
     return result.stdout.decode(encoding="utf8", errors="ignore")
 
 
+print('Fixing Tensorboard...')
 #uninstall tensorboard so it works
-#download dvae https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth
-#check if dvae.pth exists
+run("pip uninstall tensorboard -y")
+run("pip uninstall tensorboard-data-server -y")
+run("pip uninstall tensorboard-plugin-wit -y")
+run("pip uninstall tb-nightly -y")
+run("pip install tensorboard")
 if not os.path.exists("experiments/dvae.pth"):
 
     print("Downloading DVAE...")
