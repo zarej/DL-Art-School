@@ -1,6 +1,8 @@
 **NOTICE**: this repo is not endorsed by @neonbjb
 
-## **NEW**: [Colab training notes](./COLAB_USAGE.md)
+## in progress: [Diffusion model training](#training-the-diffusion-model-wip). Track progress [here](https://github.com/152334H/DL-Art-School/issues/3#issuecomment-1436541887)
+## **NEW**: (windows) [Training UI](#windows-training-ui-with-conda)
+## [Colab training notes](./COLAB_USAGE.md)
 
 # Tortoise fine-tuning with DLAS
 
@@ -19,7 +21,7 @@ pip install -r codes/requirements.laxed.txt # ONLY TESTED ON python=3.9; use you
 pip uninstall tensorboard # this is only needed if you want to view tensorboard logs. see https://github.com/pytorch/pytorch/issues/22676
 ```
 
-### Windows Installation with Conda
+### Windows Training UI with Conda
 
 This script by @devilismyfriend will install a conda environment named `DLAS` that uses a newer version of cuDNN for faster training:
 
@@ -31,6 +33,10 @@ cd DL-Art-School
 
 This requires that you have [miniconda](https://docs.conda.io/en/latest/miniconda.html)/[anaconda](https://www.anaconda.com/) (with python 3.10) and git installed.
 
+After it finishes setup, you can run it with `".\Start DLAS.cmd"`:
+
+![](https://user-images.githubusercontent.com/87043616/219940447-09c45772-f469-48cd-9a1f-9a41d38ef193.png)
+
 ## RUNNING
 1. prepare a dataset (**LJSpeech format** is what's configured; if you can read the code you can use other formats like voxpopuli)
 2. **edit `experiments/EXAMPLE_gpt.yml`**. Read & possibly edit **every line** **with `CHANGEME`** in it. Especially,
@@ -40,6 +46,15 @@ This requires that you have [miniconda](https://docs.conda.io/en/latest/minicond
 3. run `cd codes && python3 train.py -opt ../experiments/EXAMPLE_gpt.yml`
    * DO NOT CANCEL THIS until you see `INFO: Saving models and training states.`. All training progress before that line is LOST. (feel free to cancel it if you used bad data or something)
 4. load up the [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) fork, and use the new `--ar-checkpoint` option with `/path/to/DL-Art-School/experiments/<INSERT EXPERIMENT NAME HERE>/models/<MOST RECENT STEPS>_gpt.pth`.
+
+### Training the diffusion model (WIP)
+1. Make sure you have an LJSpeech dataset & a fine-tuned GPT model from the previous instructions.
+2. **edit `experiments/EXAMPLE_diff.yml`**. Everything above applies, but there's also some new things:
+  * More vram is consumed compared to the GPT training; you should reduce batch size accordingly
+	* **`gpt_path`** needs to point to a GPT model.
+	* `after:` parameters adjust warmup steps
+3. run `cd cdoes && python3 train.py -opt ../experiments/EXAMPLE_diff.yml`. Same warning applies
+4. The [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) fork now has a `--diff-checkpoint` flag as well.
 
 ### continuing a training session
 _This section will be removed once I write a script to automate it_
