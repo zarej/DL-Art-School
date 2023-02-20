@@ -12,7 +12,8 @@ like the [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) proje
 ```sh
 git clone https://github.com/152334H/DL-Art-School
 cd DL-Art-School
-wget https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth -O experiments/dvae.pth # this will definitely be taken down at some point; open an issue with a backup link and i'll replace it
+wget https://huggingface.co/Gatozu35/tortoise-tts/resolve/main/dvae.pth -O experiments/dvae.pth # https://huggingface.co/jbetker/tortoise-tts-v2/resolve/3704aea61678e7e468a06d8eea121dba368a798e/.models/dvae.pth
+sha256sum ../DL-Art-School/experiments/dvae.pth | grep a990825371506c16bcf0e8167bf24ccf82f65bb6a1dbcbfcf058d76f9b197e35 # extra check on vqvae checkpoint integrity, feel free to skip this
 cp ~/.cache/tortoise/models/autoregressive.pth experiments # copy the gpt model
 pip install -r codes/requirements.laxed.txt # ONLY TESTED ON python=3.9; use your existing tortoise env if possible
 pip uninstall tensorboard # this is only needed if you want to view tensorboard logs. see https://github.com/pytorch/pytorch/issues/22676
