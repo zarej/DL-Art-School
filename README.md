@@ -37,7 +37,7 @@ After it finishes setup, you can run it with `".\Start DLAS.cmd"`:
 
 ![](https://user-images.githubusercontent.com/87043616/219940447-09c45772-f469-48cd-9a1f-9a41d38ef193.png)
 
-## RUNNING
+## CLI USAGE
 1. prepare a dataset (**LJSpeech format** is what's configured; if you can read the code you can use other formats like voxpopuli)
 2. **edit `experiments/EXAMPLE_gpt.yml`**. Read & possibly edit **every line** **with `CHANGEME`** in it. Especially,
    * change the dataset config (obviously)
