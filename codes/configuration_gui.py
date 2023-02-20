@@ -287,6 +287,7 @@ class App(ctk.CTk):
         return ''
         return None
     def install_tortoise(self):
+        os.mkdir('results')
         run('git clone https://github.com/152334H/tortoise-tts-fast', desc="Cloning Tortoise TTS Fast")
         run('python -m pip install -e tortoise-tts-fast/.', desc="Installing Tortoise TTS Fast")
     def select_frame_by_name(self, name):
@@ -602,14 +603,13 @@ class App(ctk.CTk):
         self.visual_debug_rate_entry.grid(row=20, column=1, sticky="nsew")
         self.visual_debug_rate_entry.insert(0, self.visual_debug_rate)
     def start_tts_api(self,path):
-        self.playground_model_path_entry.configure(state='disabled')
+        #self.playground_model_path_entry.configure(state='disabled')
         #check if TextToSpeech is already loaded
-        if self.playground_api == None:
-            sys.path.append('./tortoise-tts-fast/tortoise')
-            from api import TextToSpeech
-            from inference import save_gen_with_voicefix
-            from tortoise.utils.audio import load_required_audio, check_audio
-        
+        sys.path.append('./tortoise-tts-fast/tortoise')
+        from api import TextToSpeech
+        from inference import save_gen_with_voicefix
+        from tortoise.utils.audio import load_required_audio, check_audio
+    
         if path == None:
             self.playground_api = TextToSpeech(
             high_vram=True,
@@ -909,6 +909,8 @@ class App(ctk.CTk):
                     os.path.join('results', f"{k}_{k}.wav"),
                     voicefixer=False, #disabled for now as the quality is not good
                 )
+        if self.playground_api == None:
+            self.start_tts_api(self.playground_model_path_entry)
         if self.playground_compare_to_original_var.get() == 1:
             #run twice, once with original and once with new
             #original
