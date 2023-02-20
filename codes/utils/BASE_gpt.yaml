@@ -143,3 +143,4 @@ logger:
   visuals: [gen, mel]
   visual_debug_rate: 500
   is_mel_spectrogram: true
+  disable_state_saving: true

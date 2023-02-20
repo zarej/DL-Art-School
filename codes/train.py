@@ -256,12 +256,18 @@ class Trainer:
         if self.current_step % opt['logger']['save_checkpoint_freq'] == 0:
             self.model.consolidate_state()
             if self.rank <= 0:
-                self.logger.info('Saving models and training states.')
+                if opt['logger']['disable_state_saving'] is False:
+                    self.logger.info('Saving models and training states.')
+                else:
+                    self.logger.info('Saving model.')
                 self.model.save(self.current_step)
                 state = {'epoch': self.epoch, 'iter': self.current_step, 'total_data_processed': self.total_training_data_encountered}
                 if self.dataset_debugger is not None:
                     state['dataset_debugger_state'] = self.dataset_debugger.get_state()
-                self.model.save_training_state(state)
+                if opt['logger']['disable_state_saving'] is False:
+                    self.model.save_training_state(state)
+                else:
+                    self.logger.info("State saving is disabled. Skipping state save, you won't be able to resume training from this session.")
             if 'alt_path' in opt['path'].keys():
                 import shutil
                 print("Synchronizing tb_logger to alt_path..")
