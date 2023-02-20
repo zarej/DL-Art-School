@@ -238,7 +238,10 @@ class App(ctk.CTk):
         self.warmup_steps = -1
         self.gradient_accumlation = 4
         self.learning_rate = '1e-5'
-        self.learning_rate_steps = '[500, 1000, 1400, 1800]'
+        self.learning_rate_steps = '[100, 200, 280, 360]'
+        self.ema_model_save = False
+        self.save_states = True
+        self.training_seed = 1337
 
         #common logger variables
         self.print_status_frequency = 100
@@ -255,13 +258,12 @@ class App(ctk.CTk):
         self.valid_num_workers = 1
         self.path_to_ar_model = '../experiments/autoregressive.pth'
         #self.path_to_dvae_model = '../experiments/dvae.pth'
-
         #configurator variables
         self.update_available = False
-
+        #check if there's a tortoise-tts-fast folder in the current directory
         #playground variables
         self.playground_api = None
-        self.playground_model_path = self.find_latest_generated_model()
+        self.playground_model_path = self.find_latest_generated_model() if os.path.exists('tortoise-tts-fast') else ''
         self.playground_seed = ''
         self.playground_text = ''
         self.playground_voice_dir = ''
@@ -272,6 +274,8 @@ class App(ctk.CTk):
         model_path = './experiments'
         #sort the directories by date
         dirs = sorted(os.listdir(model_path), key=lambda x: os.path.getmtime(os.path.join(model_path, x)))
+        #reverse the list so that the latest is first
+        dirs.reverse()
         for dir in dirs:
             #if is dir
             if os.path.isdir(os.path.join(model_path, dir)):
@@ -280,6 +284,8 @@ class App(ctk.CTk):
                     if len(os.listdir(os.path.join(model_path, dir,'models'))) > 0:
                         #sort the files by date
                         files = sorted(os.listdir(os.path.join(model_path, dir,'models')), key=lambda x: os.path.getmtime(os.path.join(model_path, dir,'models', x)))
+                        #reverse the list so that the latest is first
+                        files.reverse()
                         for file in files:
                             if not file.startswith('0_'):
                                 if 'ema' not in file.lower():
@@ -308,6 +314,9 @@ class App(ctk.CTk):
             #check if tortoise-tts-fast exists
             if os.path.exists("./tortoise-tts-fast"):
                 self.playground_frame.grid(row=0, column=1, sticky="nsew")
+                if self.playground_api is None:
+                    if self.playground_model_path != '':
+                        self.playground_api = self.start_tts_api(self.playground_model_path_entry)
             else:
                 #yes no messagebox
                 if messagebox.askyesno("Tortoise TTS Fast not found", "Tortoise TTS Fast is required in order to do inference. Do you want me to set it up?"):
@@ -517,7 +526,7 @@ class App(ctk.CTk):
         self.dataset_path_entry.bind("<FocusOut>", lambda event: self.check_dataset_folder(self.dataset_path_entry))
 
         #create a button to select the dataset path next to the entry
-        self.dataset_path_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="...", command=lambda: self.browse_for_path_focus(self.dataset_path_entry))
+        self.dataset_path_button = ctk.CTkButton(self.general_frame_subframe,width=10, text="...", command=lambda: self.browse_for_path_focus(self.dataset_path_entry,'folder'))
         self.dataset_path_button.grid(row=8, column=2, sticky="nsew")
         
         #create train batch size label and entry
@@ -578,29 +587,53 @@ class App(ctk.CTk):
         self.learning_rate_steps_entry = ctk.CTkEntry(self.general_frame_subframe)
         self.learning_rate_steps_entry.grid(row=16, column=1, sticky="nsew")
         self.learning_rate_steps_entry.insert(0, self.learning_rate_steps)
-        #create bold logger label
+        #create a switch to enable/disable EMA model save
+        self.ema_model_save_var = tk.IntVar()
+        self.ema_model_save_var.set(self.ema_model_save)
+        self.ema_model_save_label = ctk.CTkLabel(self.general_frame_subframe, text="Save EMA Model")
+        ema_model_save_label_ttp = CreateToolTip(self.ema_model_save_label, "Whether to save the EMA model. EMA models aren't used for GPT training")
+        self.ema_model_save_label.grid(row=17, column=0, sticky="nsew")
+        self.ema_model_save_switch = ctk.CTkSwitch(self.general_frame_subframe, variable=self.ema_model_save_var)
+        self.ema_model_save_switch.grid(row=17, column=1, sticky="nsew")    
+        #create a switch to enable/disable state saving
+        self.save_state_var = tk.IntVar()
+        self.save_state_var.set(self.save_states)
+        self.save_state_label = ctk.CTkLabel(self.general_frame_subframe, text="Save States")
+        save_state_label_ttp = CreateToolTip(self.save_state_label, "Whether to save the state of the training, disabling this means you won't be able to resume from this training session.")
+        self.save_state_label.grid(row=18, column=0, sticky="nsew")
+        self.save_state_switch = ctk.CTkSwitch(self.general_frame_subframe, variable=self.save_state_var)
+        self.save_state_switch.grid(row=18, column=1, sticky="nsew")
+        #create a label and entry for training seed
+        self.training_seed_label = ctk.CTkLabel(self.general_frame_subframe, text="Training Seed")
+        training_seed_label_ttp = CreateToolTip(self.training_seed_label, "The seed to use for training.")
+        self.training_seed_label.grid(row=19, column=0, sticky="nsew")
+        self.training_seed_entry = ctk.CTkEntry(self.general_frame_subframe)
+        self.training_seed_entry.grid(row=19, column=1, sticky="nsew")
+        self.training_seed_entry.insert(0, self.training_seed)
+
+
         self.logger_label = ctk.CTkLabel(self.general_frame_subframe, text="Logger Settings",font=ctk.CTkFont(size=20, weight="bold"))
-        self.logger_label.grid(row=17, column=0, sticky="nsew",pady=10)
+        self.logger_label.grid(row=20, column=0, sticky="nsew",pady=10)
         #create print status frequency label and entry
         self.print_status_frequency_label = ctk.CTkLabel(self.general_frame_subframe, text="Print Status Frequency")
         print_status_frequency_label_ttp = CreateToolTip(self.print_status_frequency_label, "The frequency to print the status of the training.")
-        self.print_status_frequency_label.grid(row=18, column=0, sticky="nsew")
+        self.print_status_frequency_label.grid(row=21, column=0, sticky="nsew")
         self.print_status_frequency_entry = ctk.CTkEntry(self.general_frame_subframe)
-        self.print_status_frequency_entry.grid(row=18, column=1, sticky="nsew")
+        self.print_status_frequency_entry.grid(row=21, column=1, sticky="nsew")
         self.print_status_frequency_entry.insert(0, self.print_status_frequency)
         #create save frequency label and entry
         self.save_frequency_label = ctk.CTkLabel(self.general_frame_subframe, text="Save Checkpoint Frequency")
         save_frequency_label_ttp = CreateToolTip(self.save_frequency_label, "The frequency to save the model.")
-        self.save_frequency_label.grid(row=19, column=0, sticky="nsew")
+        self.save_frequency_label.grid(row=22, column=0, sticky="nsew")
         self.save_frequency_entry = ctk.CTkEntry(self.general_frame_subframe)
-        self.save_frequency_entry.grid(row=19, column=1, sticky="nsew")
+        self.save_frequency_entry.grid(row=22, column=1, sticky="nsew")
         self.save_frequency_entry.insert(0, self.save_checkpoint_frequency)
         #create visual debug frequency label and entry
         self.visual_debug_rate_label = ctk.CTkLabel(self.general_frame_subframe, text="Visual Debug Frequency")
         visual_debug_rate_label_ttp = CreateToolTip(self.visual_debug_rate_label, "The frequency to save the visual debug images.")
-        self.visual_debug_rate_label.grid(row=20, column=0, sticky="nsew")
+        self.visual_debug_rate_label.grid(row=23, column=0, sticky="nsew")
         self.visual_debug_rate_entry = ctk.CTkEntry(self.general_frame_subframe)
-        self.visual_debug_rate_entry.grid(row=20, column=1, sticky="nsew")
+        self.visual_debug_rate_entry.grid(row=23, column=1, sticky="nsew")
         self.visual_debug_rate_entry.insert(0, self.visual_debug_rate)
     def start_tts_api(self,path):
         #self.playground_model_path_entry.configure(state='disabled')
@@ -650,9 +683,12 @@ class App(ctk.CTk):
             #show error message
             messagebox.showerror("Error", "Dataset folder is not valid, please check the documentation for more info.")
             dataset_path.delete(0, tk.END)
-    def browse_for_path_focus(self,entry_box):
+    def browse_for_path_focus(self,entry_box,type='file'):
         #get the path from the user
-        path = fd.askdirectory()
+        if type == 'file':
+            path = fd.askopenfilename()
+        else:
+            path = fd.askdirectory()
         #set the path to the entry box
         #delete entry box text
         entry_box.focus_set()
@@ -738,7 +774,7 @@ class App(ctk.CTk):
         self.playground_model_path_entry.insert(0, self.playground_model_path)
         self.playground_model_path_entry.bind("<FocusOut>", lambda event: self.start_tts_api(self.playground_model_path_entry))
 
-        self.playground_model_path_button = ctk.CTkButton(self.playground_frame_subframe, width=10,text="...", command=lambda: self.browse_for_path_focus(self.dataset_path_entry))
+        self.playground_model_path_button = ctk.CTkButton(self.playground_frame_subframe, width=10,text="...", command=lambda: self.browse_for_path_focus(self.playground_model_path_entry,'file'))
         self.playground_model_path_button.grid(row=1, column=2, sticky="nsew")
         #create text box for text input
         self.playground_text_label = ctk.CTkLabel(self.playground_frame_subframe, text="Text")
@@ -968,10 +1004,10 @@ class App(ctk.CTk):
         #self.steps_entry.insert(0, str(steps_per_epoch))
         self.learning_rate_steps_entry.delete(0, tk.END)
         self.learning_rate_steps_entry.insert(0, str(lr_decay_steps))
-        self.print_status_frequency_entry.delete(0, tk.END)
-        self.print_status_frequency_entry.insert(0, str(print_freq))
-        self.save_frequency_entry.delete(0, tk.END)
-        self.save_frequency_entry.insert(0, str(val_freq))
+        #self.print_status_frequency_entry.delete(0, tk.END) #disabled for now as it's annoying
+        #self.print_status_frequency_entry.insert(0, str(print_freq)) #disabled for now as it's annoying
+        #self.save_frequency_entry.delete(0, tk.END) #disabled for now as it's annoying
+        #self.save_frequency_entry.insert(0, str(val_freq)) #disabled for now as it's annoying
     def update_DLAS(self):
         new_version = subprocess.check_output(["git", "ls-remote", "https://github.com/152334H/DL-Art-School.git","master"], cwd=Path(__file__).resolve().parent).strip().decode()[0:7]
         with open("DLAS_hash.cfg", "w") as f:
@@ -1190,6 +1226,9 @@ class App(ctk.CTk):
         self.train_num_workers = int(self.training_workers_entry.get())
         self.valid_num_workers = int(self.validation_workers_entry.get())
         self.path_to_ar_model = self.ar_model_path_entry.get()
+        self.manual_seed = int(self.training_seed_entry.get())
+        self.ema_enabled = bool(self.ema_model_save_var.get())
+        self.save_states = bool(self.save_state_var.get())
         #self.path_to_dvae_model = self.dvae_model_path_entry.get()
         
         self.base_config['name'] = self.project_name
@@ -1217,10 +1256,13 @@ class App(ctk.CTk):
         self.base_config['train']['mega_batch_factor'] = self.gradient_accumlation_steps
         self.base_config['steps']['gpt_train']['optimizer_params']['lr'] = 'learning_rate_val'
         self.base_config['train']['gen_lr_steps'] = 'multi_step_lr_steps_val'
+        self.base_config['train']['ema_enabled'] = self.ema_enabled
+        self.base_config['train']['manual_seed'] = self.manual_seed
         #logger settings
         self.base_config['logger']['print_freq'] = self.print_status_frequency
         self.base_config['logger']['save_checkpoint_freq'] = self.save_frequency
         self.base_config['logger']['visual_debug_rate'] = self.visual_debug_rate
+        self.base_config['logger']['disable_state_saving'] = True if self.save_states == False else False
         #fix yaml
         with open('experiments/'+self.project_name+'_config.yaml', 'w') as f:
             yaml.dump(self.base_config, f)
