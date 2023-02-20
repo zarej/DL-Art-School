@@ -256,6 +256,12 @@ class Trainer:
         if self.current_step % opt['logger']['save_checkpoint_freq'] == 0:
             self.model.consolidate_state()
             if self.rank <= 0:
+                if opt['upgrades']['number_of_checkpoints_to_save'] > 0:
+                    self.logger.info(
+                        f"Leaving only {opt['upgrades']['number_of_checkpoints_to_save']} checkpoints/states"
+                    )
+                    self.model.leave_number_of_checkpoints(opt['upgrades']['number_of_checkpoints_to_save'])
+
                 self.logger.info('Saving models and training states.')
                 self.model.save(self.current_step)
                 state = {'epoch': self.epoch, 'iter': self.current_step, 'total_data_processed': self.total_training_data_encountered}
