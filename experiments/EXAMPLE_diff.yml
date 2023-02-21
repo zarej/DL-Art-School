@@ -186,6 +186,7 @@ logger:
   visuals: [gen, mel] # idk
   visual_debug_rate: 99999999 # still not using this yet
   is_mel_spectrogram: true
+  disable_state_saving: true # CHANGEME if you plan to halt training inbetween
 
 upgrades:
   # Variable: number_of_checkpoints_to_save
