@@ -11,6 +11,8 @@ like the [tortoise-tts-fast](https://github.com/152334H/tortoise-tts-fast) proje
 ## INSTALLATION
 (this will be updated often)
 
+### CLI Install
+
 ```sh
 git clone https://github.com/152334H/DL-Art-School
 cd DL-Art-School
@@ -99,11 +101,11 @@ For a very basic and simple task, I trained the ar model for 500 steps, with bat
 
 ### Other experiments so far
 
-- Fine-tuning with [non-English datasets (Marathi)](https://github.com/152334H/DL-Art-School/discussions/12)
+- Fine-tuning with [non-English datasets (Marathi)](https://github.com/152334H/DL-Art-School/discussions/12), [YouTube examples](https://youtu.be/kzBOrMw7oBk)
 - other experiments [by me](https://github.com/152334H/DL-Art-School/issues/1)
 
 ## [Helping out](https://github.com/152334H/DL-Art-School/discussions/4)
-This project is in its infantcy, and is in desperate need of contributors. If you have any suggestions / ideas, please visit the [discussions](https://github.com/152334H/DL-Art-School/discussions/4) page. If you have programming skills, try making a pull request! 
+This project is in its infancy, and is in desperate need of contributors. If you have any suggestions / ideas, please visit the [discussions](https://github.com/152334H/DL-Art-School/discussions/4) page. If you have programming skills, try making a pull request! 
 
 ### Extra community stuff
 
