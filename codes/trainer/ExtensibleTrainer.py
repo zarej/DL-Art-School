@@ -3,6 +3,7 @@ import logging
 import os
 from math import sqrt
 from time import time
+from pathlib import Path
 
 import torch
 from torch import distributed
@@ -545,6 +546,31 @@ class ExtensibleTrainer(BaseModel):
                         self.emas[name] = self.emas[name].cpu()
                 if hasattr(net.module, 'network_loaded'):
                     net.module.network_loaded()
+
+    def leave_number_of_checkpoints(self, number_of_models: int = 2):
+        ids = []
+        path = Path(self.opt['path']['models'])
+
+        for file in Path(path.parent / 'training_state').glob('*.state'):
+            ids.append([int(str(file.name).replace('.state', '')), file])
+
+        for file in Path(path).glob('*.pth'):
+            ids.append([int(str(file.name).replace('_gpt_ema.pth', '').replace('_gpt.pth', '')), file])
+
+        number_of_saved_checkpoints = 3 * (number_of_models - 1)
+        if len(ids) <= number_of_saved_checkpoints:
+            return
+
+        sorted_list = sorted(ids, key=lambda x: x[0], reverse=True)
+
+        for _ in range(0, number_of_saved_checkpoints):
+            sorted_list.pop(0)
+
+        for file_info in sorted_list:
+            _, file_path = file_info
+            print(f'Cleaning old checkpoint: {file_path}')
+            open(file_path, 'w').close()
+            os.remove(file_path)
 
     def save(self, iter_step):
         for name, net in self.networks.items():

@@ -28,7 +28,7 @@ datasets:
   val:
     name: CHANGEME_validation_dataset_name
     n_workers: 1
-    batch_size: 32 # this could be higher probably
+    batch_size: 64 # this could be higher probably
     mode: paired_voice_audio
     path: CHANGEME_path_to_validation_dataset
     fetcher_mode: ['lj']
@@ -108,6 +108,7 @@ networks:
       train_solo_embeddings: False # missing in uv3/4
       use_mel_codes_as_input: True # ditto
       checkpointing: True
+      tortoise_compat: True
       #types: 1 # this is MISSING, but in my analysis 1 is equivalent to not having it.
       #only_alignment_head: False  # uv3/4
 
@@ -121,24 +122,28 @@ train: # CHANGEME: ALL OF THESE PARAMETERS SHOULD BE EXPERIMENTED WITH
   niter: 50000
   warmup_iter: -1
   mega_batch_factor: 4    # <-- Gradient accumulation factor. If you are running OOM, increase this to [2,4,8].
-  val_freq: 500
+  val_freq: 500 # TODO set this to epoch size * something
 
   default_lr_scheme: MultiStepLR
   gen_lr_steps: [500, 1000, 1400, 1800] #[50000, 100000, 140000, 180000]
   lr_gamma: 0.5
 
 eval:
-  output_state: gen
-  injectors:
-    gen_inj_eval:
-      type: generator
-      generator: generator
-      in: hq
-      out: [gen, codebook_commitment_loss]
+  pure: true # see train.py
 
-logger: 
-  print_freq: 100
+logger:
+  print_freq: 100 # TODO: set this to epoch size
   save_checkpoint_freq: 500 # CHANGEME: especially you should increase this it's really slow
-  visuals: [gen, mel]
+  visuals: [gen, mel] #TODO: figure this out
   visual_debug_rate: 500
   is_mel_spectrogram: true
+
+upgrades:
+  # Variable: number_of_checkpoints_to_save
+  # Description: Define how many checkpoints should be saved on disk (1 checkpoint + 1 state =~ 6.8 GB)
+  # Type: integer
+  # Values:
+  # smaller than 1 - turn off this option; there is no max value. For Colab use 1 or 2.
+  # 1 == Leave last saved checkpoint + last saved state (about 6.8 GB).
+  # 2 == Leave last 2 saved checkpoints + last saved states (about 2 *~ 6.8 GB =~ 13.6 GB).
+  number_of_checkpoints_to_save: 0

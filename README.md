@@ -23,8 +23,8 @@ pip uninstall tensorboard # this is only needed if you want to view tensorboard 
 
 ### Windows Training UI with Conda
 
-
 [![Tutorial](https://img.youtube.com/vi/lnIq4SFFXWs/0.jpg)](https://www.youtube.com/watch?v=lnIq4SFFXWs)
+
 
 This script by @devilismyfriend will install a conda environment named `DLAS` that uses a newer version of cuDNN for faster training:
 
@@ -38,7 +38,9 @@ This requires that you have [miniconda](https://docs.conda.io/en/latest/minicond
 
 After it finishes setup, you can run it with `".\Start DLAS.cmd"`:
 
+
 ![](https://i.imgur.com/knj39lE.png)
+
 
 ## CLI USAGE
 1. prepare a dataset (**LJSpeech format** is what's configured; if you can read the code you can use other formats like voxpopuli)
