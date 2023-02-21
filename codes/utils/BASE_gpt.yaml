@@ -127,6 +127,7 @@ train: # CHANGEME: ALL OF THESE PARAMETERS SHOULD BE EXPERIMENTED WITH
   gen_lr_steps: [500, 1000, 1400, 1800] #[50000, 100000, 140000, 180000]
   lr_gamma: 0.5
   ema_enabled: false
+  manual_seed: 1337
 
 eval:
   output_state: gen
@@ -143,3 +144,4 @@ logger:
   visuals: [gen, mel]
   visual_debug_rate: 500
   is_mel_spectrogram: true
+  disable_state_saving: true

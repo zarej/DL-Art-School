@@ -17,7 +17,6 @@ experiments/*/models/*
 
 *.yml
 *.html
-*.png
 *.jpg
 *.gif
 *.pth
