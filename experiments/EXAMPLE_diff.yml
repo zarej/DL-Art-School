@@ -1,13 +1,17 @@
+# Notes:
+#### general settings
 name: CHANGEME_your_experiment_name
 model: extensibletrainer
+distortion: sr  # TODO: ????????
 scale: 1
 gpu_ids: [0] # <-- unless you have multiple gpus, use this
 start_step: 0 # -1 causes 0.pth to be saved!
+#force_start_step: 39000
 checkpointing_enabled: true  # <-- Gradient checkpointing. Enable for huge GPU memory savings. Disable for distributed training.
+grad_scaler_enabled: false # TODO: ????????
 fp16: false # might want to check this out
-wandb: false  # <-- enable to log to wandb. tensorboard logging is always enabled.
 use_tb_logger: true
-
+wandb: false  # <-- enable to log to wandb. tensorboard logging is always enabled.
 
 # diffusion doesn't actually need paired voice labels...
 # HOWEVER, all of the other data fetching modes don't actually provide 'wav' outputs in the dict.
@@ -18,33 +22,36 @@ datasets:
     n_workers: 4 # idk what this does
     batch_size: 32 # gives ~16GB on my 3090
     mode: paired_voice_audio
+    sample_rate: 22050
     path: CHANGEME_training_dataset_name
     fetcher_mode: ['lj'] # CHANGEME if your dataset isn't in LJSpeech format
+    max_wav_length: 220500 # WAS: 255995 
+    max_text_length: 999 # WAS: 200
+    load_conditioning: true # note that the diffuser doesn't use this, but the gpt model that passes outputs to the diffuser does.
+    num_conditioning_candidates: 1 # WAS: 2
+    conditioning_length: 102400 # WAS 44000
+    needs_collate: false # TODO: ??????????
+    use_bpe_tokenizer: true
+    load_aligned_codes: false
     phase: train
-    max_wav_length: 255995
-    max_text_length: 200
-    sample_rate: 22050
-    load_conditioning: True # note that the diffuser doesn't use this, but the gpt model that passes outputs to the diffuser does.
-    num_conditioning_candidates: 2 # this is still broken
-    conditioning_length: 44000
-    use_bpe_tokenizer: True
-    load_aligned_codes: False
   val:
     name: TestDS
     n_workers: 2
     batch_size: 16 # this could be higher probably
     mode: paired_voice_audio
+    sample_rate: 22050
     path: CHANGEME_validation_dataset_name
     fetcher_mode: ['lj']
+    max_wav_length: 220500 # WAS: 255995 
+    max_text_length: 999 # WAS: 200
+    load_conditioning: true
+    num_conditioning_candidates: 1 # WAS 2
+    conditioning_length: 102400 # WAS 44000
+    needs_collate: false # TODO: ??????????
+    use_bpe_tokenizer: true
+    load_aligned_codes: false
     phase: val
-    max_wav_length: 255995
-    max_text_length: 200
-    sample_rate: 22050
-    load_conditioning: True
-    num_conditioning_candidates: 2
-    conditioning_length: 44000
-    use_bpe_tokenizer: True
-    load_aligned_codes: False
+
 
 steps:
   ddpm_train:
@@ -57,8 +64,8 @@ steps:
       lr: !!float 1e-5 # TODO: change this to something more reasonable
       weight_decay: 0.001
       beta1: 0.9
-      beta2: 0.999
-    clip_grad_eps: 1.0
+      beta2: 0.999 # ??? CHANGEME this is 0.98 elsewhere
+    clip_grad_eps: 1.0 # ??? CHANGEME this is 5.0 elsewhere
 
     injectors:
       to_mel:
@@ -136,7 +143,7 @@ steps:
         type: direct
         weight: 1
         key: vb_loss
-      mel_surrogate:
+      mel_surrogate: # TODO: figure out if this is useful at all
         type: pix
         weight: 1
         criterion: l2
@@ -154,33 +161,49 @@ networks:
       out_channels: 200
       in_latent_channels: 1024
       in_tokens: 8193
-      dropout: 0
-      use_fp16: False
+      dropout: 0 # could be 0.1?
+      use_fp16: false
       num_heads: 16
-      layer_drop: 0.1 # CHANGEME might be better to be 0!
+      layer_drop: 0 # not even 0.1 in default
       unconditioned_percentage: 0.1 # CHANGEME might be better to be 0!
-      freeze_everything_except_autoregressive_inputs: False # probably never a good thing???
+     #freeze_everything_except_autoregressive_inputs: False # probably never a good thing???
 
 path:
   pretrain_model_gpt: '~/.cache/tortoise/models/diffusion_decoder.pth' # CHANGEME: copy this from tortoise cache
   strict_load: true
   #resume_state: ../experiments/train_imgnet_vqvae_stage1/training_state/0.state   # <-- Set this to resume from a previous training state.
 
+# CHANGEME: ALL OF THESE PARAMETERS SHOULD BE EXPERIMENTED WITH
 # afaik all units here are measured in **steps** (i.e. one batch of batch_size is 1 unit)
-train: # CHANGEME: ALL OF THESE PARAMETERS SHOULD BE EXPERIMENTED WITH
+train:
   niter: 50000
-  warmup_iter: -1
+  warmup_iter: -1 # could be 0???
+  warmup_steps: 0 # TODO ????????
   mega_batch_factor: 8    # <-- Gradient accumulation factor. If you are running OOM, increase this to [2,4,8].
   val_freq: 150 # Personally I believe this should be set to epoch size * 3
+  sort_key: wav_lengths # TODO: ????
+  auto_collate: true # TODO: ????
 
   default_lr_scheme: MultiStepLR
-  gen_lr_steps: [1000, 2000, 2800, 3600] #[50000, 100000, 140000, 180000]
-  lr_gamma: 0.5
+  gen_lr_steps: [ 99999999 ] # TODO ??? [500, 1000, 1400, 1800] #[50000, 100000, 140000, 180000]
+  lr_gamma: 0.2 # TODO ??? 0.5
   ema_enabled: false
+  #ema_rate: .9995
+  #ema_on_cpu: true
   #manual_seed: 1337 # add this if you want reproducibility
 
 eval:
   pure: true # see train.py
+# evaluators: TODO
+#   fid:
+#     for: generator
+#     type: audio_diffusion_fid
+#     eval_tsv: /y/libritts/test-clean/transcribed-brief-w2v.tsv
+#     diffusion_steps: 50
+#     diffusion_schedule: linear
+#     diffusion_type: tts9_mel_autoin
+#     conditioning_free: false
+#     conditioning_free_k: 1
 
 logger:
   print_freq: 50 # TODO: set this to epoch size
