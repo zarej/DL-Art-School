@@ -17,7 +17,7 @@ import sys
 from contextlib import contextmanager
 from time import time
 from typing import Dict, List
-
+from PIL import Image, ImageTk
 from ruamel.yaml import YAML
 yaml = YAML()
 yaml.preserve_quotes = True
@@ -156,24 +156,31 @@ class App(ctk.CTk):
                 self.update_available = False
         self.sidebar_frame = ctk.CTkFrame(self, width=100, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, rowspan=10, sticky="nsew")
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="DLAS", font=ctk.CTkFont(size=20, weight="bold"))
-        self.logo_label.grid(row=0, column=0, padx=0, pady=20)
+        #image logo
+        #empty label
+        self.empty_label = ctk.CTkLabel(self.sidebar_frame, text="")
+        self.empty_label.grid(row=0, column=0, padx=0, pady=5,sticky="n")
+        self.logo_image = ctk.CTkImage(dark_image = self.icon,size=(100, 100))
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, image=self.logo_image,text='')
+        self.logo_label.grid(row=1, column=0, padx=0, pady=0,sticky="n")
+        self.logo_label_text = ctk.CTkLabel(self.sidebar_frame, text="DLAS", font=ctk.CTkFont(size=20, weight="bold"))
+        self.logo_label_text.grid(row=2, column=0, padx=0, pady=20)
 
         self.sidebar_button_0 = ctk.CTkButton(self.sidebar_frame,text='Load Config',command=self.load_config)
         self.sidebar_button_0.configure(fg_color='transparent')
-        self.sidebar_button_0.grid(row=1, column=0, padx=20, pady=5)
+        self.sidebar_button_0.grid(row=3, column=0, padx=20, pady=5)
         self.sidebar_button_1 = ctk.CTkButton(self.sidebar_frame,text='Common Settings',command=self.general_nav_button_event)
-        self.sidebar_button_1.grid(row=2, column=0, padx=20, pady=5)
+        self.sidebar_button_1.grid(row=4, column=0, padx=20, pady=5)
         self.sidebar_button_2 = ctk.CTkButton(self.sidebar_frame,text='Advanced Settings',command=self.training_nav_button_event)
-        self.sidebar_button_2.grid(row=3, column=0, padx=20, pady=5)
+        self.sidebar_button_2.grid(row=5, column=0, padx=20, pady=5)
         self.sidebar_button_3 = ctk.CTkButton(self.sidebar_frame,text='Auto Settings',command=self.calculate_training_parameters)
         self.sidebar_button_3.configure(fg_color='transparent')
-        self.sidebar_button_3.grid(row=4, column=0, padx=20, pady=5)
+        self.sidebar_button_3.grid(row=6, column=0, padx=20, pady=5)
 
         
         if self.update_available:
             self.sidebar_button_11 = ctk.CTkButton(self.sidebar_frame,text='Update Available',fg_color='red',hover_color='darkred',command=self.update_DLAS)
-            self.sidebar_button_11.grid(row=5, column=0, padx=20, pady=5)
+            self.sidebar_button_11.grid(row=7, column=0, padx=20, pady=5)
 
         self.sidebar_button_12 = ctk.CTkButton(self.sidebar_frame,text='Start Training!', command=lambda : self.process_inputs(export=False))
         #self.sidebar_button_12.bind("<Button-3>", self.create_right_click_menu_export)
@@ -218,6 +225,12 @@ class App(ctk.CTk):
 
     def create_default_variables(self):
         self.base_config_path = './codes/utils/BASE_gpt.yaml'
+        self.icon_path = './codes/utils/UI_icon.png'
+        #load icon and resize to 32x32
+        self.icon = Image.open(self.icon_path)
+        #self.icon = self.icon.resize((32, 32), Image.ANTIALIAS)
+        #self.icon = ImageTk.PhotoImage(self.icon)
+        
         with open(self.base_config_path, 'r') as stream:
             self.base_config = yaml.load(stream)
         #common variables first
@@ -643,14 +656,14 @@ class App(ctk.CTk):
         from inference import save_gen_with_voicefix
         from tortoise.utils.audio import load_required_audio, check_audio
     
-        if path == None:
+        if path == None or path == '':
             self.playground_api = TextToSpeech(
             high_vram=True,
             kv_cache=True,
             ar_checkpoint=None,)
             return
         if path.get() == '' or '.pth' not in path.get():
-            print('No model selected')
+            print('No model selected, make sure you have a pth file selected.')
             return
         else:
             
@@ -766,8 +779,8 @@ class App(ctk.CTk):
         #create empty label
 
         #create label and entry and button to model path
-        self.playground_model_path_label = ctk.CTkLabel(self.playground_frame_subframe, text="Model Path")
-        playground_model_path_label_ttp = CreateToolTip(self.playground_model_path_label, "The path to the model.")
+        self.playground_model_path_label = ctk.CTkLabel(self.playground_frame_subframe, text="AR Model Path")
+        playground_model_path_label_ttp = CreateToolTip(self.playground_model_path_label, "The path to the AR model.")
         self.playground_model_path_label.grid(row=1, column=0, sticky="nsew")
         self.playground_model_path_entry = ctk.CTkEntry(self.playground_frame_subframe, width=100)
         self.playground_model_path_entry.grid(row=1, column=1, sticky="nsew")
