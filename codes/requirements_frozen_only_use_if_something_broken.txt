@@ -211,3 +211,5 @@ xxhash==3.2.0
 yarl==1.8.2
 zipp==3.14.0
 bitsandbytes==0.35.0
+lion-pytorch==0.0.7
+triton==2.0.0a2

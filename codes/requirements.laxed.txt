@@ -51,4 +51,6 @@ x-clip
 x_transformers==1.0.4
 
 # bitsandbytes
-bitsandbytes==0.35.0
+bitsandbytes
+lion-pytorch==0.0.7
+triton==2.0.0a2
