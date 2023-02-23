@@ -46,3 +46,5 @@ axial_positional_embedding
 g-mlp-pytorch
 x-clip
 x_transformers
+
+bitsandbytes
