@@ -23,6 +23,8 @@ import torchvision.utils as utils
 from utils.loss_accumulator import LossAccumulator, InfStorageLossAccumulator
 from utils.util import opt_get, denormalize
 
+from typing import Literal, Union
+
 logger = logging.getLogger('base')
 
 
@@ -547,7 +549,10 @@ class ExtensibleTrainer(BaseModel):
                 if hasattr(net.module, 'network_loaded'):
                     net.module.network_loaded()
 
-    def leave_number_of_checkpoints(self, number_of_models: int = 2):
+    def leave_number_of_checkpoints(self, network_name: Union[str,Literal['ddpm','gpt']], number_of_models: int = 2):
+        if network_name not in ['ddpm','gpt']:
+            raise ValueError("Expected network name (opt['networks'][*]) to be 'ddpm' or 'gpt', but got %s" % network_name)
+        #
         ids = []
         path = Path(self.opt['path']['models'])
 
@@ -555,7 +560,7 @@ class ExtensibleTrainer(BaseModel):
             ids.append([int(str(file.name).replace('.state', '')), file])
 
         for file in Path(path).glob('*.pth'):
-            ids.append([int(str(file.name).replace('_gpt_ema.pth', '').replace('_gpt.pth', '')), file])
+            ids.append([int(str(file.name).replace('_%s_.pth'%network_name, '').replace('_%s.pth'%network_name, '')), file])
 
         number_of_saved_checkpoints = 3 * (number_of_models - 1)
         if len(ids) <= number_of_saved_checkpoints:
