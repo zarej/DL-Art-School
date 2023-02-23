@@ -1,6 +1,7 @@
 **NOTICE**: this repo is not endorsed by @neonbjb
 
 #### in progress: [Diffusion model training](#training-the-diffusion-model-wip). Track progress [here](https://github.com/152334H/DL-Art-School/issues/3#issuecomment-1436541887)
+#### in progress: 8bit optimizers (works on Linux, see [here](https://github.com/152334H/DL-Art-School/issues/8#issuecomment-1441850067))
 ## **NEW**: (windows) [Training UI](#windows-training-ui-with-conda)
 ## [![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1-KmMuexR9Mv40QHNt_If2YY8nx3rFi4a) [Colab training notes](./COLAB_USAGE.md)
 
