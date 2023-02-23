@@ -1,5 +1,6 @@
 from torch.cuda.amp import GradScaler
 from torch.distributed.optim import ZeroRedundancyOptimizer
+from lion_pytorch import Lion
 
 from utils.loss_accumulator import LossAccumulator
 from torch.nn import Module
@@ -129,6 +130,18 @@ class ConfigurableStep(Module):
                 opt = mbnb.optim.AdamW(groups, lr=opt_config['lr'],
                                        weight_decay=opt_get(opt_config, ['weight_decay'], 1e-2),
                                        betas=(opt_get(opt_config, ['beta1'], .9), opt_get(opt_config, ['beta2'], .999)))
+                opt._group_names = [params_names_weights, params_names_notweights]
+            elif self.step_opt['optimizer'] == 'lion':
+                groups = [
+                    { 'params': params_weights, 'weight_decay': opt_get(opt_config, ['weight_decay'], 0) },
+                    { 'params': params_notweights, 'weight_decay': 0 }
+                ]
+                opt = Lion(
+                    groups, lr=opt_config['lr'],
+                    betas=(opt_get(opt_config, ['beta1'], .9), opt_get(opt_config, ['beta2'], .999)),
+                    weight_decay=opt_get(opt_config, ['weight_decay'], 1e-2),
+                    use_triton=True
+                )
                 opt._group_names = [params_names_weights, params_names_notweights]
             elif self.step_opt['optimizer'] == 'mu_adamw':
                 groups = [
