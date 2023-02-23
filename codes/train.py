@@ -1,5 +1,4 @@
 import maybe_bnb 
-maybe_bnb.populate()
 import os
 import math
 import argparse
@@ -34,6 +33,11 @@ def init_dist(backend, **kwargs):
 class Trainer:
 
     def init(self, opt_path, opt, launcher):
+        self.use_8bit = opt_get(opt, ['use_8bit'], True)
+        if self.use_8bit:
+            maybe_bnb.populate()
+        else:
+            maybe_bnb.populate(False, False, False, embedding=None)
         self._profile = False
         self.val_compute_psnr = opt_get(opt, ['eval', 'compute_psnr'], False)
         self.val_compute_fea = opt_get(opt, ['eval', 'compute_fea'], False)
