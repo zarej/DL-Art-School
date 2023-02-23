@@ -24,6 +24,7 @@ from utils.loss_accumulator import LossAccumulator, InfStorageLossAccumulator
 from utils.util import opt_get, denormalize
 
 from typing import Literal, Union
+import maybe_bnb as mbnb
 
 logger = logging.getLogger('base')
 
@@ -340,7 +341,7 @@ class ExtensibleTrainer(BaseModel):
                     for net in self.networks.values():
                         for mod in net.modules():
                             fan_in = -1
-                            if isinstance(mod, nn.Linear):
+                            if isinstance(mod, mbnb.nn.Linear):
                                 fan_in = mod.weight.data.shape[1]
                             elif isinstance(mod, nn.Conv1d):
                                 fan_in = mod.weight.data.shape[0]

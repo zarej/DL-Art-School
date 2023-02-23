@@ -1,3 +1,5 @@
+import maybe_bnb 
+maybe_bnb.populate()
 import os
 import math
 import argparse
