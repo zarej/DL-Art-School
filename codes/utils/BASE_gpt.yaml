@@ -148,10 +148,21 @@ logger:
   disable_state_saving: true
 upgrades:
   # Variable: number_of_checkpoints_to_save
-  # Description: Define how many checkpoints should be saved on disk (1 checkpoint + 1 state =~ 6.8 GB)
+  # Description: Define how many checkpoints should be saved on disk (1 checkpoint = pth+ =~ 6.8 GB)
   # Type: integer
-  # Values:
-  # smaller than 1 - turn off this option; there is no max value. For Colab use 1 or 2.
+  # Value: should be the same value as for number_of_states_to_save
+  # smaller than 1 - turn off this option; there is no max value.
+  # For Colab use 1 or 2 for gDrive and 5 for instance drive
   # 1 == Leave last saved checkpoint + last saved state (about 6.8 GB).
   # 2 == Leave last 2 saved checkpoints + last saved states (about 2 *~ 6.8 GB =~ 13.6 GB).
   number_of_checkpoints_to_save: 0
+  # Variable: number_of_states_to_save
+  # Description: Define how many states should be saved on disk (1 state =~ 3.4 GB)
+  # if disable_state_saving is set as true this option will be inactive
+  # Type: integer
+  # Value: should be the same value as for number_of_checkpoints_to_save
+  # smaller than 1 - turn off this option; there is no max value.
+  # For Colab use 1 or 2 for gDrive and 5 for instance drive
+  # 1 == Leave last saved state (about 3.4 GB).
+  # 2 == Leave last 2 saved states (about 2 *~ 3.4 GB =~ 6.8 GB).
+  number_of_states_to_save: 0
