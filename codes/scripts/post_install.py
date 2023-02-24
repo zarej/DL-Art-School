@@ -55,6 +55,7 @@ if not os.path.exists("experiments/autoregressive.pth"):
 base_dir = os.path.dirname(os.getcwd())
 # Check for "different" B&B Files and copy only if necessary
 if os.name == "nt":
+    run(f'pip install https://huggingface.co/r4ziel/xformers_pre_built/resolve/main/triton-2.0.0-cp310-cp310-win_amd64.whl', "Installing Triton", "Couldn't install triton")
     run("pip install -U bitsandbytes==0.35.0", "Installing B&B for Windows")
     bnb_src = os.path.join(os.getcwd(), "resources/bitsandbytes_windows")
     bnb_dest = os.path.join(sysconfig.get_paths()["purelib"], "bitsandbytes")
