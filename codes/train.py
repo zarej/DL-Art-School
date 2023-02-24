@@ -266,11 +266,23 @@ class Trainer:
                     self.logger.info('Saving models and training states.')
                 else:
                     self.logger.info('Saving model.')
-                if opt['upgrades']['number_of_checkpoints_to_save'] > 0:
+
+                if opt['upgrades']['number_of_checkpoints_to_save'] > 0 or \
+                        opt['upgrades']['number_of_states_to_save'] > 0:
+
+                    number_of_states_to_save = opt['upgrades']['number_of_states_to_save'] \
+                        if not opt['logger']['disable_state_saving'] else 0
+
                     self.logger.info(
-                        f"Leaving only {opt['upgrades']['number_of_checkpoints_to_save']} checkpoints/states"
+                        f"Leaving only {opt['upgrades']['number_of_checkpoints_to_save']} checkpoints and "
+                        f"{number_of_states_to_save} states"
                     )
-                    self.model.leave_number_of_checkpoints(next(iter(opt['networks'].keys())),opt['upgrades']['number_of_checkpoints_to_save'])
+                    self.model.limit_number_of_checkpoints_and_states(
+                        next(iter(opt['networks'].keys())),
+                        models_number=opt['upgrades']['number_of_checkpoints_to_save'],
+                        state_number=opt['upgrades']['number_of_states_to_save'],
+                    )
+
                 self.model.save(self.current_step)
                 state = {'epoch': self.epoch, 'iter': self.current_step, 'total_data_processed': self.total_training_data_encountered}
                 if self.dataset_debugger is not None:

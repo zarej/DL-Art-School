@@ -550,33 +550,38 @@ class ExtensibleTrainer(BaseModel):
                 if hasattr(net.module, 'network_loaded'):
                     net.module.network_loaded()
 
-    def leave_number_of_checkpoints(self, network_name: Union[str,Literal['ddpm','gpt']], number_of_models: int = 2):
-        if network_name not in ['ddpm','gpt']:
-            raise ValueError("Expected network name (opt['networks'][*]) to be 'ddpm' or 'gpt', but got %s" % network_name)
-        #
-        ids = []
-        path = Path(self.opt['path']['models'])
+    def limit_number_of_checkpoints_and_states(
+            self, network_name: Union[str, Literal['ddpm', 'gpt']], models_number: int = 2, state_number: int = 2
+    ) -> None:
+        if network_name not in ['ddpm', 'gpt']:
+            raise ValueError(
+                "Expected network name (opt['networks'][*]) to be 'ddpm' or 'gpt', but got %s" % network_name,
+            )
 
-        for file in Path(path.parent / 'training_state').glob('*.state'):
-            ids.append([int(str(file.name).replace('.state', '')), file])
+        models_path = Path(self.opt['path']['models']).parent / 'models'
+        states_path = Path(self.opt['path']['models']).parent / 'training_state'
+        files_pth, files_ema_pth, files_state = [], [], []
 
-        for file in Path(path).glob('*.pth'):
-            ids.append([int(str(file.name).replace('_%s_.pth'%network_name, '').replace('_%s.pth'%network_name, '')), file])
+        if models_number > 0:
+            files_pth = sorted(
+                models_path.glob(f'*_{network_name}.pth'), reverse=True, key=lambda p: int(p.stem.split('_')[0]),
+            )
+            files_ema_pth = sorted(
+                models_path.glob(f'*_{network_name}_ema.pth'), reverse=True, key=lambda p: int(p.stem.split('_')[0]),
+            )
 
-        number_of_saved_checkpoints = 3 * (number_of_models - 1)
-        if len(ids) <= number_of_saved_checkpoints:
-            return
+        if not self.opt['logger']['disable_state_saving'] and state_number > 0:
+            files_state = sorted(states_path.glob('*.state'), reverse=True, key=lambda p: int(p.stem))
 
-        sorted_list = sorted(ids, key=lambda x: x[0], reverse=True)
+        files_to_keep = files_pth[:models_number - 1] \
+            + files_ema_pth[:models_number - 1] \
+            + files_state[:state_number - 1]
 
-        for _ in range(0, number_of_saved_checkpoints):
-            sorted_list.pop(0)
-
-        for file_info in sorted_list:
-            _, file_path = file_info
-            print(f'Cleaning old checkpoint: {file_path}')
-            open(file_path, 'w').close()
-            os.remove(file_path)
+        for file_path in files_pth + files_ema_pth + files_state:
+            if file_path not in files_to_keep:
+                print(f'Removing: {file_path}')
+                open(file_path, 'w').close()
+                os.remove(file_path)
 
     def save(self, iter_step):
         for name, net in self.networks.items():
