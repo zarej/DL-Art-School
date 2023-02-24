@@ -5,7 +5,7 @@ from typing import Optional,Literal
 class nn: pass
 class optim: pass
 
-def populate(adam=True, adamw=True, linear=False, embedding: Optional[Literal["STABLE", "NORMAL"]]=None):
+def populate(adam=True, adamw=True, linear=False, embedding: Optional[Literal["STABLE", "NORMAL"]]="NORMAL"):
     nn.Linear = torch.nn.Linear
     nn.Embedding = torch.nn.Embedding
     optim.Adam = torch.optim.Adam # this does nothing tbh

@@ -54,6 +54,7 @@ steps:
     optimizer_params:
       lr: !!float 1e-5 # CHANGEME: this was originally 1e-4; I reduced it to 1e-5 because it's fine-tuning, but **you should experiment with this value**
       #lr: !!float 2e-6 # USE LOWER LR for LION
+      triton: false # ONLY RELEVANT FOR LION
       weight_decay: !!float 1e-2
       beta1: 0.9
       beta2: 0.96

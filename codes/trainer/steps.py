@@ -140,7 +140,7 @@ class ConfigurableStep(Module):
                     groups, lr=opt_config['lr'],
                     betas=(opt_get(opt_config, ['beta1'], .9), opt_get(opt_config, ['beta2'], .999)),
                     weight_decay=opt_get(opt_config, ['weight_decay'], 1e-2),
-                    use_triton=True
+                    use_triton=opt_get(opt_config, ['triton'], False),
                 )
                 opt._group_names = [params_names_weights, params_names_notweights]
             elif self.step_opt['optimizer'] == 'mu_adamw':

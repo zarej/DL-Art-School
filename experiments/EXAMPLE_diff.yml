@@ -61,8 +61,11 @@ steps:
     step_outputs: [loss]
 
     optimizer: adamw
+    #optimizer: lion
     optimizer_params:
       lr: !!float 1e-5 # TODO: change this to something more reasonable
+      #lr: !!float 2e-6 # USE LOWER LR for LION
+      triton: false # ONLY RELEVANT FOR LION
       weight_decay: 0.001
       beta1: 0.9
       beta2: 0.999 # ??? CHANGEME this is 0.98 elsewhere
