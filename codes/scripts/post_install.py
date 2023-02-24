@@ -55,6 +55,9 @@ if not os.path.exists("experiments/autoregressive.pth"):
 base_dir = os.path.dirname(os.getcwd())
 # Check for "different" B&B Files and copy only if necessary
 if os.name == "nt":
+    run("pip install -U bitsandbytes==0.35.0", "Installing B&B for Windows")
+    bnb_src = os.path.join(os.getcwd(), "resources/bitsandbytes_windows")
+    bnb_dest = os.path.join(sysconfig.get_paths()["purelib"], "bitsandbytes")
     cudnn_src = os.path.join(os.getcwd(), "resources/cudnn_windows")
     #check if chudnn is in cwd
     if not os.path.exists(cudnn_src):
@@ -87,3 +90,23 @@ if os.name == "nt":
                     status = shutil.copy2(src_file, cudnn_dest)
             if status:
                 print("Copied CUDNN 8.6 files to destination")
+    print(f"Checking for B&B files in {bnb_dest}")
+    if not os.path.exists(bnb_dest):
+        # make destination directory
+        os.makedirs(bnb_dest, exist_ok=True)
+    printed = False
+    filecmp.clear_cache()
+    for file in os.listdir(bnb_src):
+        src_file = os.path.join(bnb_src, file)
+        if file == "main.py":
+            dest = os.path.join(bnb_dest, "cuda_setup")
+            if not os.path.exists(dest):
+                os.mkdir(dest)
+        else:
+            dest = bnb_dest
+            if not os.path.exists(dest):
+                os.mkdir(dest)
+        dest_file = os.path.join(dest, file)
+        status = shutil.copy2(src_file, dest)
+    if status:
+        print("Copied B&B files to destination")
