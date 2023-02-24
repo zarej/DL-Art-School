@@ -5,7 +5,7 @@ gpu_ids: [0] # <-- unless you have multiple gpus, use this
 start_step: -1
 checkpointing_enabled: true  # <-- Gradient checkpointing. Enable for huge GPU memory savings. Disable for distributed training.
 fp16: false # TODO: why does enabling this with 8bit slow down perf??
-use_8bit: true
+use_8bit: false
 wandb: false  # <-- enable to log to wandb. tensorboard logging is always enabled.
 use_tb_logger: true
 
