@@ -690,7 +690,10 @@ class App(ctk.CTk):
             train = False
         #check if valid.txt exists
         if 'valid.txt' not in files:
-            Valid = False
+            if 'val.txt' not in files:
+                Valid = False
+            else:
+                os.rename('val.txt', 'valid.txt')
         #if any of the above are false, return false
         if wavs == False or train == False or Valid == False:
             #show error message
@@ -973,7 +976,7 @@ class App(ctk.CTk):
         else:
             process_playground()
     def txt_file_lines(self,p: str) -> int:
-            return len(Path(p).read_text().strip().split('\n'))
+            return len(Path(p).read_text(encoding='utf-8').strip().split('\n'))
     def calculate_training_parameters(self):
         
         def div_spillover(n: int, bs: int) -> int: # returns new batch size
