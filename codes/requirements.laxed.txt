@@ -53,4 +53,4 @@ x_transformers==1.0.4
 # bitsandbytes
 bitsandbytes
 lion-pytorch==0.0.7
-triton==2.0.0a2
+# triton==2.0.0a2
