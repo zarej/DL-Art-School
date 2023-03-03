@@ -1,3 +1,5 @@
+# this repo is now maintenance only; please develop a fork || use the mrq repo if you have large features to submit
+
 **NOTICE**: this repo is not endorsed by @neonbjb
 
 #### in progress: [Diffusion model training](#training-the-diffusion-model-wip). Track progress [here](https://github.com/152334H/DL-Art-School/issues/3#issuecomment-1436541887)
